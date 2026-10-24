@@ -465,12 +465,13 @@ function cloudStore(fs,uid,local){
     remove(id){ return run(id,()=>coll.doc(id).delete()); }
   };
 }
+function sampleHidden(){ try{ return localStorage.getItem('reading-days-hide-sample')==='1'; }catch(e){ return false; } }
 function applyDocs(docs){
   const B=docs.filter(d=>d.kind==='book'), S=docs.filter(d=>d.kind==='sess'), Q=docs.filter(d=>d.kind==='quote');
   const st=docs.find(d=>d.kind==='settings');
   settings = st ? {weekGoal:3,...st} : {weekGoal:3};
   buildTypes(settings.types);
-  if(!B.length && !S.length && !Q.length){ usingSample=true; books=SAMPLE.books; sess=SAMPLE.sess; quotes=SAMPLE.quotes; }
+  if(!B.length && !S.length && !Q.length && !sampleHidden()){ usingSample=true; books=SAMPLE.books; sess=SAMPLE.sess; quotes=SAMPLE.quotes; }
   else { usingSample=false; books=B; sess=S; quotes=Q; }
   renderAll();
   if(openBook) renderBookSheet();
@@ -516,7 +517,8 @@ function renderView(){
   if(usingSample) html+=`<div class="sample-note">
       <svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true"><path d="M8 30 Q4 30 4 24 Q4 18 10 18 Q11 10 19 10 Q26 10 28 16 Q36 16 36 23 Q36 30 29 30 Z" fill="#FFFCF6" stroke="#3E3A39" stroke-width="3" stroke-linejoin="round"/><circle cx="16" cy="22" r="1.6" fill="#3E3A39"/><circle cx="24" cy="22" r="1.6" fill="#3E3A39"/><path d="M18 26 Q20 27.5 22 26" fill="none" stroke="#3E3A39" stroke-width="2" stroke-linecap="round"/></svg>
       <p>而家顯示緊<b>示例</b>書同紀錄，等你睇下點用。加入第一本書之後，示例會自動收起。</p>
-      <button class="btn sm" type="button" data-act="addbook">＋ 加第一本書</button></div>`;
+      <button class="btn sm" type="button" data-act="addbook">＋ 加第一本書</button>
+      <button class="btn plain sm" type="button" data-act="hidesample">收起示例</button></div>`;
   if(tab==='lib') html+=libHTML();
   if(tab==='case') html+=caseHTML();
   if(tab==='cal') html+=calHTML();
@@ -775,6 +777,8 @@ $('#view').addEventListener('click',e=>{
   }
   if(el=g('[data-act]')){
     if(el.dataset.act==='addbook') openEditBook(null);
+    if(el.dataset.act==='hidesample'){ try{ localStorage.setItem('reading-days-hide-sample','1'); }catch(err){}
+      usingSample=false; books=[]; sess=[]; quotes=[]; renderAll(); toast('示例收起咗'); }
     if(el.dataset.act==='addwish') openEditBook(null,'wish');
     if(el.dataset.act==='addquote') openQuoteSheet(null);
   }
@@ -828,10 +832,10 @@ function renderBookSheet(){
     </div>
     <div class="sheet-foot">
       <button class="btn coral sm" type="button" data-startbook>▶ 讀 10 分鐘</button>
-      ${usingSample?'':`<button class="btn plain sm" type="button" data-addq>＋ 抄一句</button>
+      ${usingSample?'<span class="hint">示例書刪唔到，喺書庫頂撳「收起示例」就會消失</span>':`<button class="btn plain sm" type="button" data-addq>＋ 抄一句</button>
       <button class="btn plain sm" type="button" data-editbook>編輯</button>
       <span class="right">${confirmDel?`<span class="confirm">連紀錄同摘句一齊刪？<button class="btn coral sm" type="button" data-delbook="yes">刪除</button><button class="btn plain sm" type="button" data-delbook="no">唔刪</button></span>`
-        :`<button class="btn plain sm" type="button" data-delbook="ask">刪除</button>`}</span>`}
+        :`<button class="btn plain sm" type="button" data-delbook="ask">🗑 刪除</button>`}</span>`}
     </div>`, c);
 }
 $('#sheetRoot').addEventListener('click',e=>{
@@ -854,9 +858,7 @@ $('#sheetRoot').addEventListener('click',e=>{
     const a=el.dataset.delbook;
     if(a==='ask'){ confirmDel=true; renderBookSheet(); }
     else if(a==='no'){ confirmDel=false; renderBookSheet(); }
-    else { confirmDel=false; const id=b.id; closeSheet();
-      sess.filter(s=>s.book===id).forEach(s=>store.remove(s.id)); quotes.filter(q=>q.book===id).forEach(q=>store.remove(q.id));
-      store.remove(id); toast(`刪咗《${b.title}》`); }
+    else { confirmDel=false; closeSheet(); deleteBook(b); }
   }
 });
 
@@ -864,10 +866,17 @@ $('#sheetRoot').addEventListener('click',e=>{
 let draft=null;
 function openEditBook(id,own){
   if(usingSample && id){ return; }
+  editDel=false;
   const b=id?books.find(x=>x.id===id):null;
   draft = b ? {own:'ebook',buyNote:'',...b,tags:[...(b.tags||[])]} : {id:uid('b'),kind:'book',title:'',author:'',type:'小說',tags:[],status:'want',own:own||'ebook',buyNote:'',unit:'頁',total:'',current:0,created:Date.now()};
   openBook=null; renderEditBook(!b);
 }
+function deleteBook(b){
+  const id=b.id;
+  sess.filter(s=>s.book===id).forEach(s=>store.remove(s.id)); quotes.filter(q=>q.book===id).forEach(q=>store.remove(q.id));
+  store.remove(id); toast(`刪咗《${b.title}》`);
+}
+let editDel=false;
 function renderEditBook(isNew){
   const d=draft; const c=tc(d.type);
   sheet(`<form id="bookForm">
@@ -893,7 +902,10 @@ function renderEditBook(isNew){
       </div>
       <span class="hint">古籍建議用「篇」，論文同小說用「頁」，電子書冇固定頁數就用「%」。</span>
     </div>
-    <div class="sheet-foot"><span class="right"><button class="btn coral" type="submit">${isNew?'加入書庫':'儲存'}</button></span></div>
+    <div class="sheet-foot">${isNew?'':(editDel
+        ?`<span class="confirm">連紀錄同摘句一齊刪？<button class="btn coral sm" type="button" data-editdel="yes">刪除</button><button class="btn plain sm" type="button" data-editdel="no">唔刪</button></span>`
+        :`<button class="btn plain sm" type="button" data-editdel="ask">🗑 刪除呢本書</button>`)}
+      <span class="right"><button class="btn coral" type="submit">${isNew?'加入書庫':'儲存'}</button></span></div>
   </form>`, c);
 }
 function syncDraft(){
@@ -910,6 +922,11 @@ $('#sheetRoot').addEventListener('click',e=>{
   if(el=e.target.closest('[data-type]')){ syncDraft(); draft.type=el.dataset.type; renderEditBook(!books.find(b=>b.id===draft.id)); }
   else if(el=e.target.closest('[data-own]')){ syncDraft(); draft.own=el.dataset.own; renderEditBook(!books.find(b=>b.id===draft.id)); }
   else if(el=e.target.closest('[data-st]')){ syncDraft(); draft.status=el.dataset.st; renderEditBook(!books.find(b=>b.id===draft.id)); }
+  else if(el=e.target.closest('[data-editdel]')){
+    syncDraft(); const a=el.dataset.editdel;
+    if(a==='yes'){ editDel=false; const b=books.find(x=>x.id===draft.id); closeSheet(); if(b) deleteBook(b); }
+    else { editDel=(a==='ask'); renderEditBook(false); }
+  }
   else if(el=e.target.closest('[data-rmtag]')){ syncDraft(); draft.tags.splice(+el.dataset.rmtag,1); renderEditBook(!books.find(b=>b.id===draft.id)); $('#tagIn').focus(); }
 });
 $('#sheetRoot').addEventListener('change',e=>{ if(e.target.id==='b-unit'){ syncDraft(); renderEditBook(!books.find(b=>b.id===draft.id)); } });
