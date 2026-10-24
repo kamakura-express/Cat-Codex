@@ -1,0 +1,1354 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#FFFCF6">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="閱讀小日子">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png">
+<title>閱讀小日子</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Huninn&display=swap">
+<style>
+/* Layout: 一張書枱 — 頂部大掣「開始讀」，下面分頁：書庫（書架＋標籤）、印章月曆、摘句卡；專注時全屏一杯茶慢慢飲完 */
+:root{
+  --paper:#FFFCF6;
+  --paper-2:#FBF3E4;
+  --ink:#3E3A39;
+  --ink-soft:#7A716C;
+  --ink-faint:#B4AAA2;
+  --coral:#F2A497;
+  --yamabuki:#F6D27A;
+  --mizu:#A8D3E6;
+  --wakatake:#B9DAA5;
+  --coral-tint:#FCE3DD;
+  --yamabuki-tint:#FDF1CF;
+  --mizu-tint:#E2F1F7;
+  --wakatake-tint:#E6F2DE;
+  --line:3px;
+  --r-lg:28px;
+  --r-md:18px;
+  --r-sm:12px;
+  --font:"Huninn","PingFang TC","Noto Sans TC","Microsoft JhengHei",system-ui,sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+img{max-width:100%}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html,body{height:100%}
+body{
+  margin:0;background:var(--paper);color:var(--ink);font-family:var(--font);font-size:16px;line-height:1.6;
+  background-image:radial-gradient(var(--paper-2) 1.6px,transparent 1.7px);background-size:22px 22px;
+}
+button,input,textarea,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px dashed var(--ink);outline-offset:3px}
+.wrap{
+  max-width:1100px;margin:0 auto;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:20px 56px;
+}
+.num{font-variant-numeric:tabular-nums}
+
+/* header */
+.top{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:18px}
+.brand{display:flex;align-items:center;gap:12px}
+.brand h1{margin:0;font-size:30px;font-weight:400;letter-spacing:.06em;line-height:1.1}
+.brand p{margin:2px 0 0;color:var(--ink-soft);font-size:13px}
+.sync{cursor:pointer;font:inherit;color:inherit;margin-left:auto;font-size:12px;border:2px solid var(--ink);border-radius:999px;padding:3px 10px;background:var(--wakatake-tint);white-space:nowrap}
+.sync.local{background:var(--yamabuki-tint)}
+
+/* buttons */
+.btn{
+  border:var(--line) solid var(--ink);border-radius:999px;background:var(--yamabuki);padding:7px 16px;font-size:15px;
+  box-shadow:0 4px 0 var(--ink);transition:transform .12s,box-shadow .12s;display:inline-flex;align-items:center;gap:6px;white-space:nowrap
+}
+.btn:hover{transform:translateY(-1px);box-shadow:0 5px 0 var(--ink)}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--ink)}
+.btn.coral{background:var(--coral)} .btn.mizu{background:var(--mizu)} .btn.green{background:var(--wakatake)} .btn.plain{background:#fff}
+.btn.sm{padding:4px 12px;font-size:13px;border-width:2px;box-shadow:0 3px 0 var(--ink)}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+
+/* hero: start reading */
+.hero{
+  display:grid;grid-template-columns:auto 1fr auto;gap:20px;align-items:center;
+  border:var(--line) solid var(--ink);border-radius:var(--r-lg);background:#fff;padding:18px 22px;
+  box-shadow:6px 6px 0 var(--coral);margin-bottom:22px
+}
+.hero h2{margin:0;font-size:22px;font-weight:400}
+.hero p{margin:4px 0 0;color:var(--ink-soft);font-size:14px}
+.hero .go{font-size:18px;padding:10px 22px;background:var(--coral)}
+.stats{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.stat{border:2px solid var(--ink);border-radius:var(--r-sm);padding:4px 12px;background:var(--paper);font-size:13px}
+.stat b{font-weight:400;font-size:18px;margin-right:2px}
+.weekdots{display:inline-flex;gap:4px;vertical-align:middle;margin-left:6px}
+.weekdots i{width:12px;height:12px;border-radius:50%;border:2px solid var(--ink);background:#fff;display:inline-block}
+.weekdots i.on{background:var(--coral)}
+
+/* tabs */
+.tabs{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap}
+.tab{border:var(--line) solid var(--ink);border-radius:var(--r-md) var(--r-md) 6px 6px;background:var(--paper);padding:6px 18px;font-size:16px}
+.tab[aria-selected="true"]{background:var(--yamabuki);transform:translateY(-3px)}
+
+/* library */
+.lib-head{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.seg{display:flex;border:var(--line) solid var(--ink);border-radius:999px;overflow:hidden;background:#fff;flex-wrap:wrap}
+.seg button{border:0;background:transparent;padding:5px 14px;font-size:14px;border-right:2px solid var(--ink)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--mizu)}
+.lib-head .add{margin-left:auto}
+.tagbar{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px;align-items:center}
+.tagbar .lbl{font-size:13px;color:var(--ink-soft);margin-right:4px}
+.chip{font-size:12px;border:2px solid var(--ink);border-radius:999px;padding:1px 10px;background:var(--tint,#fff);white-space:nowrap}
+button.chip{cursor:pointer}
+button.chip[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.shelf-title{display:flex;align-items:center;gap:8px;margin:6px 0 10px;font-size:16px}
+.shelf-title .cnt{color:var(--ink-soft);font-size:13px}
+.books{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:18px;margin-bottom:26px}
+.book{
+  text-align:left;border:var(--line) solid var(--ink);border-radius:var(--r-md);background:#fff;padding:14px;
+  display:grid;grid-template-columns:58px 1fr;gap:12px;min-width:0;box-shadow:5px 5px 0 var(--c);transition:transform .15s,box-shadow .15s
+}
+.book:hover{transform:translate(-2px,-2px);box-shadow:7px 7px 0 var(--c)}
+.book .info{min-width:0;display:flex;flex-direction:column;gap:5px}
+.book h3{margin:0;font-size:17px;font-weight:400;line-height:1.35;overflow-wrap:anywhere}
+.book .au{font-size:13px;color:var(--ink-soft)}
+.book .chips{display:flex;flex-wrap:wrap;gap:4px}
+.bar{height:12px;border:2px solid var(--ink);border-radius:999px;background:var(--paper);overflow:hidden}
+.bar > i{display:block;height:100%;background:var(--c);border-right:2px solid var(--ink)}
+.bar > i[style*="width:0"]{border-right:0}
+.prog{font-size:12px;color:var(--ink-soft);display:flex;justify-content:space-between;gap:8px}
+.mini-go{align-self:flex-start;margin-top:2px}
+.empty{display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;padding:26px 10px;color:var(--ink-soft)}
+.empty h3{margin:0;color:var(--ink);font-weight:400;font-size:19px}
+.empty p{margin:0;max-width:32ch}
+.sample-note{
+  display:flex;gap:12px;align-items:center;border:var(--line) solid var(--ink);border-radius:var(--r-md);
+  background:var(--mizu-tint);padding:10px 14px;margin-bottom:18px;font-size:14px;flex-wrap:wrap
+}
+.sample-note p{margin:0;flex:1;min-width:200px}
+
+/* calendar */
+.cal-wrap{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:22px;align-items:start}
+.panel{border:var(--line) solid var(--ink);border-radius:var(--r-lg);background:#fff;padding:16px 18px}
+.cal-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.cal-head h3{margin:0;font-weight:400;font-size:20px;flex:1}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.cal .dow{text-align:center;font-size:12px;color:var(--ink-soft)}
+.day{
+  aspect-ratio:1;border:2px solid var(--paper-2);border-radius:10px;position:relative;background:var(--paper);
+  display:flex;align-items:flex-start;justify-content:flex-start;padding:3px 5px;font-size:12px;color:var(--ink-soft);min-width:0;max-width:100%
+}
+.day.today{border-color:var(--ink)}
+.day.blank{background:transparent;border-color:transparent}
+.day button{position:absolute;inset:0;border:0;background:transparent;padding:0}
+.day svg{position:absolute;inset:14% 10% 6%;width:80%;height:80%;pointer-events:none}
+.day.sel{background:var(--yamabuki-tint)}
+.log{display:flex;flex-direction:column;gap:10px;margin-top:6px}
+.log-item{border:2px solid var(--ink);border-radius:var(--r-sm);padding:8px 12px;background:var(--paper);display:flex;flex-direction:column;gap:2px}
+.log-item .t{display:flex;justify-content:space-between;gap:8px;font-size:14px}
+.log-item .m{font-size:12px;color:var(--ink-soft)}
+.log-item .n{font-size:14px}
+.goal{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:14px;margin-top:12px}
+.goal select{border:2px solid var(--ink);border-radius:999px;background:var(--paper);padding:2px 10px}
+
+/* quotes */
+.quotes{columns:2 300px;column-gap:18px}
+.quote{
+  break-inside:avoid;margin:0 0 18px;border:var(--line) solid var(--ink);border-radius:var(--r-md);background:#fff;
+  padding:16px 18px 12px;position:relative;box-shadow:5px 5px 0 var(--c)
+}
+.quote blockquote{margin:0 0 10px;font-size:16px;line-height:1.85;white-space:pre-wrap;overflow-wrap:anywhere}
+.quote blockquote::before{content:"「";color:var(--ink-faint)}
+.quote blockquote::after{content:"」";color:var(--ink-faint)}
+.quote .src{font-size:13px;color:var(--ink-soft);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.quote .src .acts{margin-left:auto;display:flex;gap:6px}
+
+/* bookcase */
+.case-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:4px 0 10px}
+.case-head h3{margin:0;font-size:18px;font-weight:400}
+.case-head .cnt{color:var(--ink-soft);font-size:13px}
+.case-head .btn{margin-left:auto}
+.cabinet{
+  --row:178px;
+  border:var(--line) solid var(--ink);border-radius:var(--r-md) var(--r-md) 8px 8px;padding:10px 14px 0;margin-bottom:28px;
+  background-color:var(--paper-2);
+  background-image:repeating-linear-gradient(to bottom,transparent 0 151px,var(--ink) 151px 154px,var(--yamabuki) 154px 165px,var(--ink) 165px 168px,transparent 168px var(--row));
+  background-position:0 10px;
+  display:flex;flex-wrap:wrap;align-items:flex-start;box-shadow:6px 6px 0 var(--wakatake)
+}
+.cabinet.wish{background-color:#fff;box-shadow:6px 6px 0 var(--coral);
+  background-image:repeating-linear-gradient(to bottom,transparent 0 151px,var(--ink) 151px 154px,var(--coral-tint) 154px 165px,var(--ink) 165px 168px,transparent 168px var(--row))}
+.slot{height:var(--row);display:flex;align-items:flex-start;padding:0 2px}
+.spine-wrap{height:151px;display:flex;align-items:flex-end;position:relative}
+.spine{
+  position:relative;border:var(--line) solid var(--ink);border-bottom-width:0;border-radius:6px 6px 0 0;background:var(--c);
+  display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:10px 0 8px;gap:6px;overflow:hidden;
+  transition:transform .15s;
+}
+.spine::before,.spine::after{content:"";position:absolute;left:0;right:0;height:3px;background:var(--ink);opacity:.85}
+.spine::before{top:5px}
+.spine::after{bottom:18px}
+.spine:hover{transform:translateY(-8px)}
+.spine .vt{writing-mode:vertical-rl;font-size:13px;line-height:1.15;letter-spacing:.08em;overflow:hidden;flex:1;min-height:0;text-overflow:ellipsis;white-space:nowrap;margin-top:4px}
+.spine .fm{position:absolute;bottom:2px;left:0;right:0;text-align:center;font-size:10px;line-height:14px}
+.spine.lean{transform:rotate(6deg);transform-origin:bottom left;margin-right:10px}
+.spine.lean:hover{transform:rotate(6deg) translateY(-8px)}
+.spine.wish{background:var(--paper);border-style:dashed;border-bottom-width:0}
+.spine.wish::before,.spine.wish::after{opacity:.25}
+.ribbon{position:absolute;top:-14px;right:6px;width:7px;height:22px;background:var(--coral);border:2px solid var(--ink);border-bottom:0;z-index:1}
+.ribbon::after{content:"";position:absolute;bottom:-5px;left:-2px;border-left:5.5px solid transparent;border-right:5.5px solid transparent;border-top:5px solid var(--ink)}
+.deco{height:151px;display:flex;align-items:flex-end;padding:0 8px}
+.case-empty{width:100%;height:151px;display:flex;align-items:center;justify-content:center;color:var(--ink-soft);font-size:14px;text-align:center;padding:0 10px}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--ink-soft);margin:-16px 0 24px}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.legend i{width:10px;height:16px;border:2px solid var(--ink);border-radius:3px;background:var(--c);display:inline-block}
+.wishlist{display:flex;flex-direction:column;gap:8px;margin:-14px 0 26px}
+.wish-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;border:2px solid var(--ink);border-radius:var(--r-sm);background:#fff;padding:7px 12px}
+.wish-row .tt{flex:1;min-width:140px}
+.wish-row .tt small{display:block;color:var(--ink-soft);font-size:12px}
+.wish-row .bt{display:flex;gap:6px;flex-wrap:wrap}
+@media (prefers-reduced-motion:reduce){.spine{transition:none}}
+
+/* quote capture */
+.drop{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;border:var(--line) dashed var(--ink);border-radius:var(--r-md);background:#fff;padding:20px 14px;cursor:pointer}
+.drop:hover,.drop:focus-within{background:var(--yamabuki-tint)}
+.drop b{font-weight:400;font-size:16px}
+.drop span{font-size:12px;color:var(--ink-soft)}
+.drop input{position:absolute;width:1px;height:1px;opacity:0}
+.reading-shot{display:flex;flex-direction:column;align-items:center;gap:8px;padding:14px;color:var(--ink-soft);font-size:14px}
+.spin-soft{animation:bob 1.4s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(-5px) rotate(-3deg)}}
+@media (prefers-reduced-motion:reduce){.spin-soft{animation:none}}
+.qitem{display:flex;flex-direction:column;gap:6px;border:2px solid var(--ink);border-radius:var(--r-sm);background:#fff;padding:8px 10px}
+.qitem.off{opacity:.55}
+.qitem textarea{border:2px solid var(--paper-2);border-radius:8px;padding:6px 8px;resize:vertical;line-height:1.75;width:100%;background:var(--paper)}
+.qitem .inp{padding:3px 10px;border-width:2px;font-size:13px}
+.qitem .keep{display:flex;gap:6px;align-items:center;font-size:13px}
+.focus .tip{font-size:12px;color:var(--ink-soft);max-width:30ch;margin:0}
+
+/* type editor */
+.edit-types{border:0;background:transparent;font-size:12px;color:var(--ink-soft);text-decoration:underline;padding:0 4px}
+.edit-types:hover{color:var(--ink)}
+.trow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;border:2px solid var(--ink);border-radius:var(--r-sm);background:#fff;padding:8px 10px}
+.trow.del{background:var(--paper-2);border-style:dashed}
+.trow .inp{flex:1;min-width:120px;padding:4px 10px}
+.trow .n{font-size:12px;color:var(--ink-soft);white-space:nowrap}
+.trow .gone{flex:1;min-width:120px;text-decoration:line-through;color:var(--ink-soft)}
+.trow select{border:2px solid var(--ink);border-radius:999px;background:var(--paper);padding:2px 8px;font-size:13px}
+.swatches{display:flex;gap:6px}
+.sw{width:24px;height:24px;border-radius:50%;border:2.5px solid var(--ink);background:var(--c);padding:0}
+.sw[aria-checked="true"]{box-shadow:0 0 0 2px #fff,0 0 0 4.5px var(--ink)}
+.err{color:#B5503F;font-size:13px}
+
+/* sheet */
+.sheet-back{
+  position:fixed;inset:0;background:rgba(62,58,57,.28);z-index:30;display:flex;justify-content:center;align-items:flex-start;overflow-y:auto;
+  padding-top:calc(env(safe-area-inset-top,0px) + 24px);padding-bottom:calc(env(safe-area-inset-bottom,0px) + 24px);
+  padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px))
+}
+.sheet{width:100%;max-width:640px;background:var(--paper);border:var(--line) solid var(--ink);border-radius:var(--r-lg);box-shadow:8px 8px 0 var(--c,var(--yamabuki));overflow:hidden;animation:pop .22s ease-out}
+@keyframes pop{from{transform:translateY(14px) scale(.98)}to{transform:none}}
+.sheet-top{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:var(--line) solid var(--ink);background:var(--tint,var(--yamabuki-tint));flex-wrap:wrap}
+.sheet-top h3{margin:0;font-size:18px;font-weight:400;flex:1;min-width:0;overflow-wrap:anywhere}
+.sheet-body{padding:18px 20px 22px;display:flex;flex-direction:column;gap:16px}
+.field{display:flex;flex-direction:column;gap:6px;min-width:0}
+.field > label,.field > .lab{font-size:14px;letter-spacing:.06em}
+.inp,.field textarea,.field select{
+  border:var(--line) solid var(--ink);border-radius:var(--r-sm);background:#fff;padding:7px 12px;width:100%;min-width:0
+}
+.field textarea{resize:vertical;min-height:80px;line-height:1.75}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.radios{display:flex;gap:8px;flex-wrap:wrap}
+.radios button{border:2px solid var(--ink);border-radius:999px;padding:3px 12px;background:#fff;font-size:14px}
+.radios button[aria-checked="true"]{background:var(--c,var(--yamabuki))}
+.kw-box{display:flex;flex-wrap:wrap;gap:6px;align-items:center;border:var(--line) solid var(--ink);border-radius:var(--r-sm);background:#fff;padding:7px 10px}
+.kw-box .chip{display:inline-flex;gap:4px;align-items:center}
+.kw-box .chip button{border:0;background:transparent;padding:0;font-size:14px;line-height:1}
+.kw-in{border:0;outline:0;flex:1;min-width:110px;background:transparent}
+.hint{font-size:12px;color:var(--ink-faint)}
+.sheet-foot{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:12px 16px;border-top:var(--line) solid var(--ink);background:#fff}
+.sheet-foot .right{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.sec-title{display:flex;align-items:center;gap:8px;font-size:15px;margin:4px 0 -4px}
+.sec-title .dot{width:12px;height:12px;border-radius:50%;border:2.5px solid var(--ink);background:var(--c)}
+.mini-quote{border-left:4px solid var(--c);padding:2px 0 2px 10px;font-size:14px;white-space:pre-wrap;overflow-wrap:anywhere}
+.mini-quote small{display:block;color:var(--ink-soft);font-size:12px}
+.confirm{display:inline-flex;gap:6px;align-items:center;font-size:13px;flex-wrap:wrap}
+
+/* focus mode */
+.focus{
+  position:fixed;inset:0;z-index:40;background:var(--paper);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;overflow-y:auto;
+  padding:calc(env(safe-area-inset-top,0px) + 20px) max(16px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 20px) max(16px,env(safe-area-inset-left,0px));
+  background-image:radial-gradient(var(--paper-2) 1.6px,transparent 1.7px);background-size:22px 22px;
+}
+.focus .bk{font-size:15px;color:var(--ink-soft);max-width:30ch}
+.focus .clock{font-size:52px;letter-spacing:.04em;line-height:1}
+.focus .msg{margin:0;font-size:15px;max-width:26ch}
+.focus .ctrl{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.distract{font-size:13px;color:var(--ink-soft)}
+.focus svg.tea{width:min(240px,62vw);height:auto}
+.pick{display:flex;flex-direction:column;gap:14px;align-items:center;width:100%;max-width:420px}
+.pick-books{display:flex;flex-direction:column;gap:8px;width:100%}
+.pick-books button{display:flex;gap:10px;align-items:center;text-align:left;border:var(--line) solid var(--ink);border-radius:var(--r-sm);background:#fff;padding:8px 12px}
+.pick-books button[aria-checked="true"]{background:var(--tint);box-shadow:4px 4px 0 var(--c)}
+.pick-books .sp{width:12px;height:26px;border:2.5px solid var(--ink);border-radius:4px;background:var(--c);flex:none}
+.pick-books .tt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mins{display:flex;gap:8px}
+.mins button{border:var(--line) solid var(--ink);border-radius:var(--r-sm);background:#fff;padding:6px 14px;font-size:16px}
+.mins button[aria-checked="true"]{background:var(--yamabuki)}
+.done-card{border:var(--line) solid var(--ink);border-radius:var(--r-lg);background:#fff;padding:18px 20px;width:100%;max-width:440px;text-align:left;display:flex;flex-direction:column;gap:12px}
+.stamp-pop{animation:stamp .45s cubic-bezier(.3,1.6,.5,1)}
+@keyframes stamp{from{transform:scale(2.2) rotate(-25deg);opacity:0}to{transform:scale(1) rotate(-8deg);opacity:1}}
+.focus .x{position:absolute;top:calc(env(safe-area-inset-top,0px) + 14px);right:max(16px,env(safe-area-inset-right,0px))}
+
+.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 20px);transform:translateX(-50%);background:#fff;border:var(--line) solid var(--ink);border-radius:999px;padding:6px 18px;z-index:60;font-size:14px;box-shadow:0 4px 0 var(--ink);max-width:calc(100% - 32px);text-align:center}
+.copybox{width:100%;border:2px solid var(--ink);border-radius:var(--r-sm);padding:8px;font-size:13px;background:var(--paper);margin-top:8px}
+
+@media (prefers-reduced-motion:reduce){.sheet,.stamp-pop{animation:none}.btn,.book{transition:none}}
+@media (max-width:760px){
+  .hero{grid-template-columns:1fr;gap:12px;padding:16px}
+  .hero > svg{display:none}
+  .hero .go{justify-self:start}
+  .cal-wrap{grid-template-columns:1fr}
+  .grid2{grid-template-columns:1fr}
+  .lib-head .add{margin-left:0}
+  .brand h1{font-size:26px}
+  .focus .clock{font-size:44px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <svg width="62" height="56" viewBox="0 0 62 56" aria-hidden="true">
+        <rect x="6" y="40" width="50" height="10" rx="4" fill="#B9DAA5" stroke="#3E3A39" stroke-width="3"/>
+        <rect x="10" y="29" width="42" height="11" rx="4" fill="#F2A497" stroke="#3E3A39" stroke-width="3"/>
+        <rect x="14" y="18" width="34" height="11" rx="4" fill="#A8D3E6" stroke="#3E3A39" stroke-width="3"/>
+        <path d="M20 23.5 H42" stroke="#3E3A39" stroke-width="2" stroke-linecap="round"/>
+        <circle cx="31" cy="9" r="7" fill="#F6D27A" stroke="#3E3A39" stroke-width="3"/>
+        <circle cx="28.6" cy="8.5" r="1.3" fill="#3E3A39"/><circle cx="33.4" cy="8.5" r="1.3" fill="#3E3A39"/>
+        <path d="M29.5 11 Q31 12.3 32.5 11" fill="none" stroke="#3E3A39" stroke-width="1.6" stroke-linecap="round"/>
+      </svg>
+      <div><h1>閱讀小日子</h1><p>一次讀十分鐘，慢慢儲印仔</p></div>
+    </div>
+    <button class="sync local" id="sync" type="button">連線中…</button>
+  </header>
+
+  <section class="hero" id="hero"></section>
+
+  <nav class="tabs" role="tablist" aria-label="分頁">
+    <button class="tab" role="tab" id="tab-lib" data-tab="lib" aria-selected="true">書庫</button>
+    <button class="tab" role="tab" id="tab-case" data-tab="case" aria-selected="false">書櫃</button>
+    <button class="tab" role="tab" id="tab-cal" data-tab="cal" aria-selected="false">印章月曆</button>
+    <button class="tab" role="tab" id="tab-quote" data-tab="quote" aria-selected="false">摘句</button>
+  </nav>
+
+  <main id="view"></main>
+</div>
+
+<div id="sheetRoot"></div>
+<div id="focusRoot"></div>
+<div class="toast" id="toast" hidden></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script>
+(() => {
+/* ================= constants ================= */
+const PALETTE = [
+  {c:'#F2A497',t:'#FCE3DD',n:'珊瑚粉'},
+  {c:'#F6D27A',t:'#FDF1CF',n:'山吹黃'},
+  {c:'#A8D3E6',t:'#E2F1F7',n:'水色'},
+  {c:'#B9DAA5',t:'#E6F2DE',n:'若竹綠'},
+];
+const DEFAULT_TYPES = [{n:'小說',p:0},{n:'古籍',p:3},{n:'論文',p:2},{n:'文章',p:1}];
+let typeList = DEFAULT_TYPES;
+let TYPES = {}, TYPE_KEYS = [];
+function buildTypes(list){
+  typeList = (Array.isArray(list)&&list.length) ? list : DEFAULT_TYPES;
+  TYPES = {}; typeList.forEach(t=>{ TYPES[t.n]=PALETTE[(t.p|0)%4]; });
+  TYPE_KEYS = typeList.map(t=>t.n);
+}
+buildTypes(DEFAULT_TYPES);
+const STATUS = [
+  {k:'reading',n:'讀緊'},{k:'want',n:'想讀'},{k:'done',n:'讀完'},{k:'paused',n:'暫時放低'}
+];
+const UNITS = ['頁','篇','章','%'];
+const OWN = [{k:'paper',n:'實體書'},{k:'ebook',n:'電子書'},{k:'wish',n:'想買'},{k:'none',n:'借閱／網上'}];
+const MINS = [10,15,25];
+const tc = t => TYPES[t] || PALETTE[1];
+
+const DAY = 86400e3;
+const now0 = Date.now();
+const SAMPLE = {
+  books:[
+    {id:'s_b1',kind:'book',title:'三國志・魏書',author:'陳壽',type:'古籍',tags:['郭嘉','資料搜集'],status:'reading',own:'ebook',unit:'篇',total:30,current:9,created:1,updated:now0-DAY},
+    {id:'s_b2',kind:'book',title:'傾城之戀',author:'張愛玲',type:'小說',tags:['民國'],status:'reading',own:'paper',unit:'頁',total:120,current:46,created:2,updated:now0-2*DAY},
+    {id:'s_b3',kind:'book',title:'上海租界的日常生活',author:'（示例論文）',type:'論文',tags:['民國','資料搜集'],status:'want',own:'none',unit:'頁',total:32,current:0,created:3,updated:now0-3*DAY},
+    {id:'s_b4',kind:'book',title:'世說新語',author:'劉義慶',type:'古籍',tags:[],status:'done',own:'paper',unit:'篇',total:36,current:36,created:4,updated:now0-9*DAY,finished:now0-9*DAY},
+    {id:'s_b5',kind:'book',title:'洛陽伽藍記',author:'楊衒之',type:'古籍',tags:['資料搜集'],status:'want',own:'wish',buyNote:'示例：等書展再買',unit:'篇',total:5,current:0,created:5,updated:now0-4*DAY},
+    {id:'s_b6',kind:'book',title:'紅玫瑰與白玫瑰',author:'張愛玲',type:'小說',tags:['民國'],status:'want',own:'wish',buyNote:'示例：二手書店睇下',unit:'頁',total:90,current:0,created:6,updated:now0-5*DAY},
+  ],
+  sess:[
+    {id:'s_s1',kind:'sess',book:'s_b1',start:now0-DAY,minutes:15,distract:2,note:'郭嘉傳比想像中短，但裴注好多料。',to:9},
+    {id:'s_s2',kind:'sess',book:'s_b2',start:now0-2*DAY,minutes:25,distract:1,note:'',to:46},
+    {id:'s_s3',kind:'sess',book:'s_b1',start:now0-4*DAY,minutes:10,distract:0,note:'',to:7},
+    {id:'s_s4',kind:'sess',book:'s_b4',start:now0-9*DAY,minutes:25,distract:3,note:'讀完喇。',to:36},
+  ],
+  quotes:[
+    {id:'s_q1',kind:'quote',book:'s_b1',text:'示例摘句：喺呢度抄低你想記住嘅句子。',loc:'郭嘉傳',created:now0-DAY},
+    {id:'s_q2',kind:'quote',book:'s_b2',text:'示例摘句：見到好句先喺閱讀器 highlight，讀完先嚟呢度整理。',loc:'p.38',created:now0-2*DAY},
+  ]
+};
+
+/* ================= state ================= */
+let books=[], sess=[], quotes=[], settings={weekGoal:3};
+let usingSample=false;
+let tab='lib', statusF='all', tagF=null, calMonth=null, calSel=null;
+let store=null;
+let sampleImg={maxCount:10, mediaTypes:['image/*']};
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const uid = p => p+'_'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const dkey = t => { const d=new Date(t); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); };
+const startOfDay = t => { const d=new Date(t); d.setHours(0,0,0,0); return d.getTime(); };
+const weekStart = t => { const d=new Date(startOfDay(t)); const w=(d.getDay()+6)%7; return d.getTime()-w*DAY; };
+let toastT;
+function toast(m){ const t=$('#toast'); t.textContent=m; t.hidden=false; clearTimeout(toastT); toastT=setTimeout(()=>t.hidden=true,2400); }
+function setSync(txt,local){ const s=$('#sync'); s.textContent=txt; s.classList.toggle('local',!!local); }
+function fmtDate(t){ const d=new Date(t); return `${d.getMonth()+1}月${d.getDate()}日`; }
+function fmtTime(t){ const d=new Date(t); return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
+
+/* ================= storage ================= */
+function localStore(){
+  const KEY='reading-days-v1'; let all={};
+  try{ all=JSON.parse(localStorage.getItem(KEY)||'{}'); }catch(e){}
+  const flush=()=>{ try{ localStorage.setItem(KEY,JSON.stringify(all)); }catch(e){} };
+  return {
+    all(){ return Object.values(all); },
+    start(){ applyDocs(Object.values(all)); },
+    save(d){ all[d.id]=d; flush(); applyDocs(Object.values(all)); return Promise.resolve(); },
+    remove(id){ delete all[id]; flush(); applyDocs(Object.values(all)); return Promise.resolve(); }
+  };
+}
+function cloudStore(fs,uid,local){
+  const coll=fs.collection('users').doc(uid).collection('items'); const q={}; let unsub=null, first=true;
+  const run=(id,fn)=>{ const n=(q[id]||Promise.resolve()).then(fn).catch(e=>{
+      if(e&&e.code==='permission-denied') toast('冇權限儲存，請檢查 Firestore 規則');
+      else if(e&&e.code==='resource-exhausted') toast('今日用量滿咗，聽日再試');
+      else toast('儲存唔到，請檢查網絡'); }); q[id]=n; return n; };
+  return {
+    start(){
+      unsub=coll.onSnapshot(s=>{
+        const docs=s.docs.map(d=>({id:d.id,...d.data()}));
+        if(first){ first=false;
+          const mine=local?local.all():[];
+          if(s.empty && mine.length){
+            const batch=fs.batch(); mine.forEach(d=>{ const {id,...b}=d; batch.set(coll.doc(id),b); });
+            batch.commit().then(()=>toast(`已將呢部機嘅 ${mine.length} 項紀錄上傳`)).catch(()=>toast('上傳舊紀錄失敗'));
+          }
+        }
+        applyDocs(docs); setSync(s.metadata.fromCache?'☁ 離線中':'☁ 已同步',false);
+      }, e=>setSync(e&&e.code==='permission-denied'?'冇權限讀取':'同步中斷，請重新載入',true));
+    },
+    stop(){ if(unsub) unsub(); unsub=null; },
+    save(d){ const {id,...b}=d; return run(id,()=>coll.doc(id).set(b)); },
+    remove(id){ return run(id,()=>coll.doc(id).delete()); }
+  };
+}
+function applyDocs(docs){
+  const B=docs.filter(d=>d.kind==='book'), S=docs.filter(d=>d.kind==='sess'), Q=docs.filter(d=>d.kind==='quote');
+  const st=docs.find(d=>d.kind==='settings');
+  settings = st ? {weekGoal:3,...st} : {weekGoal:3};
+  buildTypes(settings.types);
+  if(!B.length && !S.length && !Q.length){ usingSample=true; books=SAMPLE.books; sess=SAMPLE.sess; quotes=SAMPLE.quotes; }
+  else { usingSample=false; books=B; sess=S; quotes=Q; }
+  renderAll();
+  if(openBook) renderBookSheet();
+}
+
+/* ================= stats ================= */
+function stats(){
+  const ws=weekStart(Date.now());
+  const weekDays=new Set(sess.filter(s=>s.start>=ws).map(s=>dkey(s.start)));
+  const days=new Set(sess.map(s=>dkey(s.start)));
+  let streak=0, t=startOfDay(Date.now());
+  if(!days.has(dkey(t))) t-=DAY;
+  while(days.has(dkey(t))){ streak++; t-=DAY; }
+  const ms=new Date(); ms.setDate(1); ms.setHours(0,0,0,0);
+  const monthMin=sess.filter(s=>s.start>=ms.getTime()).reduce((a,s)=>a+(s.minutes||0),0);
+  return {week:weekDays.size, streak, monthMin};
+}
+
+/* ================= render ================= */
+function renderAll(){ renderHero(); renderTabs(); renderView(); }
+
+function renderHero(){
+  const s=stats(); const g=settings.weekGoal||3;
+  const reading=books.filter(b=>b.status==='reading');
+  const msg = s.week>=g ? '今個禮拜達標喇，想讀就繼續讀。' : (s.week===0 ? '今個禮拜仲未開始，讀十分鐘就好。' : `今個禮拜差 ${g-s.week} 日就達標。`);
+  $('#hero').innerHTML = `
+    <svg width="96" height="86" viewBox="0 0 96 86" aria-hidden="true">${teaSVG(1,false)}</svg>
+    <div>
+      <h2>${msg}</h2>
+      <p>${reading.length ? `讀緊 ${reading.length} 本：${reading.slice(0,3).map(b=>'《'+esc(b.title)+'》').join('、')}` : '書庫入面未有「讀緊」嘅書，揀一本開始啦。'}</p>
+      <div class="stats">
+        <span class="stat">本週 <b class="num">${s.week}</b>/${g} 日<span class="weekdots" aria-hidden="true">${Array.from({length:g},(_,i)=>`<i class="${i<s.week?'on':''}"></i>`).join('')}</span></span>
+        <span class="stat">連續 <b class="num">${s.streak}</b> 日</span>
+        <span class="stat">本月 <b class="num">${s.monthMin}</b> 分鐘</span>
+      </div>
+    </div>
+    <button class="btn go" type="button" data-act="start">▶ 開始讀 10 分鐘</button>`;
+}
+function renderTabs(){ document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected',t.dataset.tab===tab)); }
+function renderView(){
+  const v=$('#view');
+  let html='';
+  if(usingSample) html+=`<div class="sample-note">
+      <svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true"><path d="M8 30 Q4 30 4 24 Q4 18 10 18 Q11 10 19 10 Q26 10 28 16 Q36 16 36 23 Q36 30 29 30 Z" fill="#FFFCF6" stroke="#3E3A39" stroke-width="3" stroke-linejoin="round"/><circle cx="16" cy="22" r="1.6" fill="#3E3A39"/><circle cx="24" cy="22" r="1.6" fill="#3E3A39"/><path d="M18 26 Q20 27.5 22 26" fill="none" stroke="#3E3A39" stroke-width="2" stroke-linecap="round"/></svg>
+      <p>而家顯示緊<b>示例</b>書同紀錄，等你睇下點用。加入第一本書之後，示例會自動收起。</p>
+      <button class="btn sm" type="button" data-act="addbook">＋ 加第一本書</button></div>`;
+  if(tab==='lib') html+=libHTML();
+  if(tab==='case') html+=caseHTML();
+  if(tab==='cal') html+=calHTML();
+  if(tab==='quote') html+=quoteHTML();
+  v.innerHTML=html;
+}
+
+/* ---------- library ---------- */
+function allTags(){
+  const set=new Set(); books.forEach(b=>(b.tags||[]).forEach(t=>set.add(t))); return [...set];
+}
+function bookMatch(b){
+  if(tagF){ if(TYPE_KEYS.includes(tagF)){ if(b.type!==tagF) return false; } else if(!(b.tags||[]).includes(tagF)) return false; }
+  return true;
+}
+function libHTML(){
+  const cnt=k=>books.filter(b=>bookMatch(b)&&(k==='all'||b.status===k)).length;
+  let h=`<div class="lib-head">
+    <div class="seg" role="group" aria-label="狀態">
+      <button type="button" data-status="all" aria-pressed="${statusF==='all'}">全部 ${cnt('all')}</button>
+      ${STATUS.map(s=>`<button type="button" data-status="${s.k}" aria-pressed="${statusF===s.k}">${s.n} ${cnt(s.k)}</button>`).join('')}
+    </div>
+    <button class="btn coral add" type="button" data-act="addbook">＋ 加書</button></div>
+    <div class="tagbar"><span class="lbl">類型</span>
+      ${TYPE_KEYS.map(t=>`<button class="chip" type="button" data-tag="${esc(t)}" aria-pressed="${tagF===t}" style="--tint:${tc(t).t}">${esc(t)}</button>`).join('')}
+      <button type="button" class="edit-types" data-edittypes>✎ 編輯類型</button>
+      ${allTags().length?`<span class="lbl" style="margin-left:8px">標籤</span>`:''}
+      ${allTags().map(t=>`<button class="chip" type="button" data-tag="${esc(t)}" aria-pressed="${tagF===t}">#${esc(t)}</button>`).join('')}
+    </div>`;
+  const groups = statusF==='all' ? STATUS : STATUS.filter(s=>s.k===statusF);
+  let any=false;
+  groups.forEach(g=>{
+    const list=books.filter(b=>b.status===g.k&&bookMatch(b)).sort((a,b)=>(b.updated||0)-(a.updated||0));
+    if(!list.length) return; any=true;
+    h+=`<div class="shelf-title">${shelfIcon(g.k)}${g.n}<span class="cnt">${list.length} 本</span></div>
+        <div class="books">${list.map(bookCard).join('')}</div>`;
+  });
+  if(!any) h+=`<div class="empty">${emptyArt()}<h3>${tagF||statusF!=='all'?'呢個分類未有書':'書庫仲係空嘅'}</h3>
+    <p>${tagF||statusF!=='all'?'試下揀第二個分類。':'將想讀、讀緊嘅書都加入嚟，之後就唔使再諗下一本讀咩。'}</p></div>`;
+  return h;
+}
+function shelfIcon(k){
+  const c={reading:'#F2A497',want:'#F6D27A',done:'#B9DAA5',paused:'#A8D3E6'}[k];
+  return `<svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><rect x="3" y="3" width="16" height="16" rx="5" fill="${c}" stroke="#3E3A39" stroke-width="2.5"/></svg>`;
+}
+function pct(b){ if(!b.total) return b.status==='done'?100:0; return Math.max(0,Math.min(100,Math.round((b.current||0)/b.total*100))); }
+function progText(b){
+  if(b.unit==='%') return `${b.current||0}%`;
+  return b.total ? `${b.current||0} / ${b.total} ${b.unit}` : `讀到第 ${b.current||0} ${b.unit}`;
+}
+function cover(b){
+  const c=tc(b.type);
+  return `<svg width="58" height="78" viewBox="0 0 58 78" aria-hidden="true">
+    <rect x="4" y="3" width="50" height="72" rx="6" fill="${c.c}" stroke="#3E3A39" stroke-width="3"/>
+    <rect x="4" y="3" width="10" height="72" rx="4" fill="${c.t}" stroke="#3E3A39" stroke-width="3"/>
+    <rect x="21" y="14" width="26" height="30" rx="4" fill="#FFFCF6" stroke="#3E3A39" stroke-width="2.5"/>
+    <text x="34" y="34" text-anchor="middle" font-size="13" font-family="Huninn, sans-serif" fill="#3E3A39">${esc(b.type.slice(0,1))}</text>
+    ${b.status==='done'?'<circle cx="44" cy="62" r="7" fill="#FFFCF6" stroke="#3E3A39" stroke-width="2.5"/><path d="M40.5 62 L43 64.5 L47.5 59.5" fill="none" stroke="#3E3A39" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>':''}
+  </svg>`;
+}
+function bookCard(b){
+  const c=tc(b.type); const p=pct(b);
+  return `<div class="book" style="--c:${c.c};--tint:${c.t}">
+    <button type="button" data-open="${esc(b.id)}" aria-label="打開《${esc(b.title)}》" style="border:0;background:transparent;padding:0">${cover(b)}</button>
+    <div class="info">
+      <h3><button type="button" data-open="${esc(b.id)}" style="border:0;background:transparent;padding:0;text-align:left;font-size:inherit">${esc(b.title)}</button></h3>
+      ${b.author?`<span class="au">${esc(b.author)}</span>`:''}
+      <div class="chips"><span class="chip" style="--tint:${c.t}">${esc(b.type)}</span>${(b.tags||[]).slice(0,3).map(t=>`<span class="chip">#${esc(t)}</span>`).join('')}</div>
+      ${b.status!=='want'?`<div class="bar" role="img" aria-label="進度 ${p}%"><i style="width:${p}%"></i></div>
+        <div class="prog num"><span>${progText(b)}</span><span>${p}%</span></div>`:''}
+      ${b.status==='reading'||b.status==='want'||b.status==='paused'?`<button class="btn sm mini-go" type="button" data-start="${esc(b.id)}">▶ 讀 10 分鐘</button>`:''}
+    </div></div>`;
+}
+function emptyArt(){
+  return `<svg width="150" height="100" viewBox="0 0 150 100" aria-hidden="true">
+    <rect x="18" y="86" width="114" height="8" rx="4" fill="#FBF3E4" stroke="#3E3A39" stroke-width="3"/>
+    <rect x="30" y="34" width="16" height="52" rx="4" fill="#F2A497" stroke="#3E3A39" stroke-width="3"/>
+    <rect x="48" y="24" width="18" height="62" rx="4" fill="#A8D3E6" stroke="#3E3A39" stroke-width="3"/>
+    <rect x="70" y="40" width="14" height="46" rx="4" fill="#B9DAA5" stroke="#3E3A39" stroke-width="3" transform="rotate(12 77 63)"/>
+    <path d="M106 30 L109 37 L116 38 L111 43 L112 50 L106 46 L100 50 L101 43 L96 38 L103 37 Z" fill="#F6D27A" stroke="#3E3A39" stroke-width="2.5" stroke-linejoin="round"/>
+  </svg>`;
+}
+
+/* ---------- bookcase ---------- */
+function hash(str){ let h=0; for(const ch of String(str)) h=(h*31+ch.codePointAt(0))|0; return Math.abs(h); }
+function spineHTML(b,i){
+  const c=tc(b.type); const h=hash(b.id);
+  const height=112+(h%34);
+  const len=b.unit==='頁'&&b.total?Math.min(+b.total,600)/600:((h>>3)%10)/10;
+  const width=30+Math.round(len*16);
+  const wish=b.own==='wish';
+  const fm = wish ? '未買' : b.own==='ebook' ? '電' : b.status==='done' ? '✓' : '';
+  const lean = !wish && i>0 && h%9===0;
+  return `<div class="slot"><div class="spine-wrap">
+    <button type="button" class="spine ${wish?'wish':''} ${lean?'lean':''}" data-open="${esc(b.id)}" style="--c:${c.c};width:${width}px;height:${height}px"
+      aria-label="《${esc(b.title)}》${wish?'，想買':''}${b.status==='reading'?'，讀緊':''}">
+      <span class="vt">${esc(b.title)}</span>${fm?`<span class="fm">${fm}</span>`:''}
+    </button>${b.status==='reading'&&!wish?'<span class="ribbon" aria-hidden="true"></span>':''}</div></div>`;
+}
+function plantDeco(){
+  return `<div class="slot"><div class="deco"><svg width="46" height="70" viewBox="0 0 46 70" aria-hidden="true">
+    <path d="M23 40 Q10 30 8 14 Q20 18 23 34 Q26 14 38 8 Q38 28 23 40" fill="#B9DAA5" stroke="#3E3A39" stroke-width="2.5" stroke-linejoin="round"/>
+    <path d="M10 42 H36 L33 66 Q32 68 30 68 H16 Q14 68 13 66 Z" fill="#F2A497" stroke="#3E3A39" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M9 42 H37" stroke="#3E3A39" stroke-width="3" stroke-linecap="round"/></svg></div></div>`;
+}
+function catDeco(){
+  return `<div class="slot"><div class="deco"><svg width="104" height="68" viewBox="0 0 104 68" aria-hidden="true">
+  <defs>
+    <clipPath id="catBody"><path d="M26 60 Q22 34 46 28 Q74 22 90 38 Q97 52 90 60 Z"/></clipPath>
+    <clipPath id="catHead"><ellipse cx="29" cy="42" rx="18" ry="15"/></clipPath>
+  </defs>
+  <path d="M26 60 Q22 34 46 28 Q74 22 90 38 Q97 52 90 60 Z" fill="#FFFCF6"/>
+  <g clip-path="url(#catBody)">
+    <path d="M46 20 Q62 22 66 36 Q60 42 50 38 Q42 34 46 20 Z" fill="#F6D27A"/>
+    <path d="M74 22 Q96 26 98 46 Q86 50 80 42 Q74 34 74 22 Z" fill="#3E3A39"/>
+  </g>
+  <path d="M26 60 Q22 34 46 28 Q74 22 90 38 Q97 52 90 60 Z" fill="none" stroke="#3E3A39" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M90 58 Q98 62 84 62 H52" fill="none" stroke="#3E3A39" stroke-width="10" stroke-linecap="round"/>
+  <path d="M90 58 Q98 62 84 62 H52" fill="none" stroke="#FFFCF6" stroke-width="4" stroke-linecap="round"/>
+  <path d="M57 62 H52" stroke="#F6D27A" stroke-width="4" stroke-linecap="round"/>
+  <path d="M14 36 Q11 22 19 24 Q24 26 26 30 Z" fill="#F6D27A" stroke="#3E3A39" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M33 29 Q38 21 43 25 Q45 29 44 35 Z" fill="#3E3A39" stroke="#3E3A39" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M17 31 Q16 27 19.5 28 Q21 29 22 31 Z" fill="#F2A497"/>
+  <path d="M37 29 Q39.5 26 41 28 Q41.5 30 41 32 Z" fill="#F2A497"/>
+  <ellipse cx="29" cy="42" rx="18" ry="15" fill="#FFFCF6"/>
+  <g clip-path="url(#catHead)">
+    <path d="M8 26 Q24 26 26 36 Q22 42 12 42 Z" fill="#F6D27A"/>
+    <path d="M36 24 Q50 28 50 40 Q42 38 38 34 Q34 30 36 24 Z" fill="#3E3A39"/>
+  </g>
+  <ellipse cx="29" cy="42" rx="18" ry="15" fill="none" stroke="#3E3A39" stroke-width="3"/>
+  <path d="M19 42 Q22 44.6 25 42 M32 42 Q35 44.6 38 42" fill="none" stroke="#3E3A39" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M27.4 46 H30 L28.7 47.6 Z" fill="#F2A497" stroke="#F2A497" stroke-width="1.2" stroke-linejoin="round"/>
+  <path d="M26.6 49 Q28.7 50.6 28.7 48.2 Q28.7 50.6 30.8 49" fill="none" stroke="#3E3A39" stroke-width="1.6" stroke-linecap="round"/>
+  <ellipse cx="17.5" cy="47" rx="3" ry="1.8" fill="#F2A497"/><ellipse cx="40" cy="47" rx="3" ry="1.8" fill="#F2A497"/>
+  <ellipse cx="22" cy="58.5" rx="6.5" ry="3.6" fill="#FFFCF6" stroke="#3E3A39" stroke-width="2.6"/>
+  <ellipse cx="35" cy="58.5" rx="6.5" ry="3.6" fill="#FFFCF6" stroke="#3E3A39" stroke-width="2.6"/>
+  <g fill="#7A716C" font-family="Huninn, sans-serif" font-size="9">
+    <text x="47" y="20" font-size="9" transform="rotate(-12 47 20)">z</text>
+    <text x="55" y="12" font-size="12" transform="rotate(-12 55 12)">Z</text>
+  </g>
+</svg></div></div>`;
+}
+function caseHTML(){
+  const order=b=>TYPE_KEYS.indexOf(b.type);
+  const sorter=(a,z)=>order(a)-order(z)||String(a.title).localeCompare(String(z.title),'zh-Hant');
+  const vis=books.filter(bookMatch);
+  const have=vis.filter(b=>b.own==='paper'||b.own==='ebook'||!b.own).sort(sorter);
+  const wish=vis.filter(b=>b.own==='wish').sort((a,z)=>(z.created||0)-(a.created||0));
+  const paper=have.filter(b=>b.own==='paper').length, ebook=have.filter(b=>b.own==='ebook').length;
+  let h=`<div class="tagbar"><span class="lbl">篩選</span>
+      ${TYPE_KEYS.map(t=>`<button class="chip" type="button" data-tag="${esc(t)}" aria-pressed="${tagF===t}" style="--tint:${tc(t).t}">${esc(t)}</button>`).join('')}
+      <button type="button" class="edit-types" data-edittypes>✎ 編輯類型</button>
+      ${allTags().map(t=>`<button class="chip" type="button" data-tag="${esc(t)}" aria-pressed="${tagF===t}">#${esc(t)}</button>`).join('')}</div>`;
+  h+=`<div class="case-head"><h3>我嘅書櫃</h3><span class="cnt">${have.length} 本・實體 ${paper}・電子 ${ebook}</span>
+      <button class="btn plain sm" type="button" data-act="addbook">＋ 加書</button></div>
+    <div class="cabinet">${have.length?plantDeco()+have.map(spineHTML).join('')+catDeco():`<div class="case-empty">書櫃仲係空嘅。加書時揀「實體書」或者「電子書」，就會擺上嚟。</div>`}</div>
+    <div class="legend">${TYPE_KEYS.map(t=>`<span><i style="--c:${tc(t).c}"></i>${esc(t)}</span>`).join('')}<span>紅色書籤＝讀緊</span><span>「電」＝電子書</span><span>✓＝讀完</span></div>`;
+  h+=`<div class="case-head"><h3>想買清單</h3><span class="cnt">${wish.length} 本</span>
+      <button class="btn coral sm" type="button" data-act="addwish">＋ 加想買嘅書</button></div>
+    <div class="cabinet wish">${wish.length?wish.map(spineHTML).join(''):`<div class="case-empty">見到想買嘅書，就加落嚟，逛書店或者書展時就有得對住買。</div>`}</div>`;
+  if(wish.length) h+=`<div class="wishlist">${wish.map(b=>`<div class="wish-row">
+      <span class="tt">《${esc(b.title)}》${b.author?' '+esc(b.author):''}${b.buyNote?`<small>${esc(b.buyNote)}</small>`:''}</span>
+      ${usingSample?'':`<span class="bt"><button class="btn sm green" type="button" data-bought="paper" data-id="${esc(b.id)}">買咗實體</button>
+      <button class="btn sm mizu" type="button" data-bought="ebook" data-id="${esc(b.id)}">買咗電子</button></span>`}</div>`).join('')}</div>`;
+  return h;
+}
+
+/* ---------- calendar ---------- */
+function stampSVG(n,mins){
+  const r=-8+((n*37)%16);
+  return `<svg viewBox="0 0 40 40" aria-hidden="true"><g transform="rotate(${r} 20 20)">
+    <circle cx="20" cy="20" r="16" fill="#FCE3DD" stroke="#F2A497" stroke-width="3"/>
+    <circle cx="20" cy="20" r="11.5" fill="none" stroke="#F2A497" stroke-width="1.5" stroke-dasharray="2 2.5"/>
+    <text x="20" y="25" text-anchor="middle" font-size="14" font-family="Huninn, sans-serif" fill="#C9675A">讀</text></g></svg>`;
+}
+function calHTML(){
+  const base=calMonth||new Date(); const y=base.getFullYear(), m=base.getMonth();
+  const first=new Date(y,m,1); const lead=(first.getDay()+6)%7; const dim=new Date(y,m+1,0).getDate();
+  const byDay={}; sess.forEach(s=>{ const k=dkey(s.start); (byDay[k]=byDay[k]||[]).push(s); });
+  const todayK=dkey(Date.now());
+  let cells=['一','二','三','四','五','六','日'].map(d=>`<div class="dow">${d}</div>`).join('');
+  for(let i=0;i<lead;i++) cells+=`<div class="day blank"></div>`;
+  for(let d=1;d<=dim;d++){
+    const k=y+'-'+(m+1)+'-'+d; const list=byDay[k]||[]; const mins=list.reduce((a,s)=>a+(s.minutes||0),0);
+    cells+=`<div class="day ${k===todayK?'today':''} ${calSel===k?'sel':''}"><span class="num">${d}</span>${list.length?stampSVG(d,mins):''}
+      <button type="button" data-day="${k}" aria-label="${m+1}月${d}日${list.length?`，讀咗 ${mins} 分鐘`:''}"></button></div>`;
+  }
+  const monthSess=sess.filter(s=>{const d=new Date(s.start);return d.getFullYear()===y&&d.getMonth()===m;});
+  const mdays=new Set(monthSess.map(s=>dkey(s.start))).size;
+  const mmins=monthSess.reduce((a,s)=>a+(s.minutes||0),0);
+  const selList = calSel ? (byDay[calSel]||[]) : [...sess].sort((a,b)=>b.start-a.start).slice(0,6);
+  const g=settings.weekGoal||3;
+  return `<div class="cal-wrap">
+    <div class="panel">
+      <div class="cal-head">
+        <button class="btn plain sm" type="button" data-cal="-1" aria-label="上個月">‹</button>
+        <h3>${y} 年 ${m+1} 月</h3>
+        <button class="btn plain sm" type="button" data-cal="1" aria-label="下個月">›</button>
+      </div>
+      <div class="cal">${cells}</div>
+      <p class="hint" style="margin:10px 0 0">今個月讀咗 <span class="num">${mdays}</span> 日，共 <span class="num">${mmins}</span> 分鐘。撳日子睇當日紀錄。</p>
+      <div class="goal"><label for="weekGoal">每週目標</label>
+        <select id="weekGoal">${[1,2,3,4,5,6,7].map(n=>`<option value="${n}" ${n===g?'selected':''}>${n} 日</option>`).join('')}</select></div>
+    </div>
+    <div class="panel">
+      <div class="cal-head"><h3>${calSel?fmtDate(new Date(calSel.replace(/-/g,'/')).getTime()):'最近紀錄'}</h3>
+        ${calSel?`<button class="btn plain sm" type="button" data-day="">全部</button>`:''}</div>
+      <div class="log">${selList.length?selList.map(logItem).join(''):`<p class="hint" style="margin:0">${calSel?'呢日冇讀書紀錄。':'未有紀錄，讀完第一次就會見到。'}</p>`}</div>
+    </div></div>`;
+}
+function logItem(s){
+  const b=books.find(x=>x.id===s.book);
+  return `<div class="log-item"><div class="t"><span>${b?'《'+esc(b.title)+'》':'（已刪除嘅書）'}</span><span class="num">${s.minutes} 分鐘</span></div>
+    <div class="m">${fmtDate(s.start)} ${fmtTime(s.start)}・分心 ${s.distract||0} 次${b&&s.to!=null&&s.to!==''?`・讀到 ${esc(s.to)}${b.unit==='%'?'%':' '+b.unit}`:''}</div>
+    ${s.note?`<div class="n">${esc(s.note)}</div>`:''}</div>`;
+}
+
+/* ---------- quotes ---------- */
+function quoteHTML(){
+  const list=[...quotes].filter(q=>{ const b=books.find(x=>x.id===q.book); return !tagF || (b&&bookMatch(b)); }).sort((a,b)=>b.created-a.created);
+  let h=`<div class="lib-head"><span class="hint" style="font-size:14px">讀嘅時候截圖或者 highlight 就好，讀完先上傳截圖或者貼上。「複製」可以貼去靈感手記。</span>
+    <button class="btn coral add" type="button" data-act="addquote">＋ 抄一句</button></div>`;
+  if(!list.length) return h+`<div class="empty">${emptyArt()}<h3>未有摘句</h3><p>見到想記住嘅句子，就抄落嚟。</p></div>`;
+  return h+`<div class="quotes">${list.map(q=>{
+    const b=books.find(x=>x.id===q.book); const c=tc(b?b.type:'文章');
+    return `<figure class="quote" style="--c:${c.c}"><blockquote>${esc(q.text)}</blockquote>
+      <figcaption class="src"><span>${b?'《'+esc(b.title)+'》':''}${q.loc?'・'+esc(q.loc):''}</span>
+      <span class="acts"><button class="btn plain sm" type="button" data-copy="${esc(q.id)}">複製</button>
+      ${usingSample?'':`<button class="btn plain sm" type="button" data-delq="${esc(q.id)}">刪除</button>`}</span></figcaption>
+      <div data-copyslot="${esc(q.id)}"></div></figure>`; }).join('')}</div>`;
+}
+
+/* ================= main events ================= */
+document.querySelector('.tabs').addEventListener('click',e=>{ const t=e.target.closest('[data-tab]'); if(!t) return; tab=t.dataset.tab; renderTabs(); renderView(); });
+$('#hero').addEventListener('click',e=>{ if(e.target.closest('[data-act="start"]')) openFocus(); });
+$('#view').addEventListener('change',e=>{
+  if(e.target.id==='weekGoal'){
+    if(usingSample){ toast('加咗第一本書之後先可以改目標'); renderView(); return; }
+    settings={...settings,weekGoal:+e.target.value}; saveSettings(); }
+});
+$('#view').addEventListener('click',e=>{
+  const g=k=>e.target.closest(k);
+  let el;
+  if(el=g('[data-status]')){ statusF=el.dataset.status; renderView(); return; }
+  if(el=g('[data-tag]')){ tagF = tagF===el.dataset.tag ? null : el.dataset.tag; renderView(); return; }
+  if(el=g('[data-open]')){ openBookSheet(el.dataset.open); return; }
+  if(el=g('[data-start]')){ openFocus(el.dataset.start); return; }
+  if(el=g('[data-cal]')){ const b=calMonth||new Date(); calMonth=new Date(b.getFullYear(),b.getMonth()+(+el.dataset.cal),1); calSel=null; renderView(); return; }
+  if(el=g('[data-day]')){ calSel = el.dataset.day && calSel!==el.dataset.day ? el.dataset.day : null; renderView(); return; }
+  if(el=g('[data-copy]')){ copyQuote(el.dataset.copy); return; }
+  if(el=g('[data-delq]')){ store.remove(el.dataset.delq); toast('刪咗一句'); return; }
+  if(g('[data-edittypes]')){ openTypeSheet(null); return; }
+  if(el=g('[data-bought]')){
+    const b=books.find(x=>x.id===el.dataset.id); if(!b) return;
+    store.save({...b,own:el.dataset.bought,buyNote:'',updated:Date.now()}); toast(`《${b.title}》擺上書櫃喇`); return;
+  }
+  if(el=g('[data-act]')){
+    if(el.dataset.act==='addbook') openEditBook(null);
+    if(el.dataset.act==='addwish') openEditBook(null,'wish');
+    if(el.dataset.act==='addquote') openQuoteSheet(null);
+  }
+});
+function copyQuote(id){
+  const q=quotes.find(x=>x.id===id); const b=books.find(x=>x.id===q.book);
+  const text=`「${q.text}」\n——${b?'《'+b.title+'》':''}${b&&b.author?' '+b.author:''}${q.loc?'，'+q.loc:''}`;
+  const fallback=()=>{ const slot=document.querySelector(`[data-copyslot="${id}"]`); slot.innerHTML=`<textarea class="copybox" rows="3" readonly>${esc(text)}</textarea><span class="hint">自動複製唔到，請手動全選複製。</span>`; const ta=slot.querySelector('textarea'); ta.focus(); ta.select(); };
+  try{ navigator.clipboard.writeText(text).then(()=>toast('複製咗，可以貼去靈感手記'),fallback); }catch(err){ fallback(); }
+}
+
+/* ================= sheets ================= */
+let openBook=null;
+function sheet(html,color){
+  $('#sheetRoot').innerHTML=`<div class="sheet-back" id="sheetBack"><div class="sheet" role="dialog" aria-modal="true" style="--c:${color.c};--tint:${color.t}">${html}</div></div>`;
+}
+function closeSheet(){ openBook=null; if(typeof qCtl!=='undefined'&&qCtl) qCtl.abort(); if(typeof qd!=='undefined') qd=null; $('#sheetRoot').innerHTML=''; }
+$('#sheetRoot').addEventListener('click',e=>{ if(e.target.id==='sheetBack'||e.target.closest('[data-close]')) closeSheet(); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape' && $('#sheetRoot').innerHTML) closeSheet(); });
+
+/* --- book detail --- */
+function openBookSheet(id){ openBook=id; renderBookSheet(); }
+let confirmDel=false;
+function renderBookSheet(){
+  const b=books.find(x=>x.id===openBook); if(!b){ closeSheet(); return; }
+  const c=tc(b.type); const p=pct(b);
+  const bs=sess.filter(s=>s.book===b.id).sort((a,z)=>z.start-a.start);
+  const bq=quotes.filter(q=>q.book===b.id).sort((a,z)=>z.created-a.created);
+  const mins=bs.reduce((a,s)=>a+(s.minutes||0),0);
+  sheet(`<div class="sheet-top"><h3>《${esc(b.title)}》${b.author?`<small style="font-size:13px;color:var(--ink-soft)"> ${esc(b.author)}</small>`:''}</h3>
+      <button class="btn plain sm" type="button" data-close>關閉</button></div>
+    <div class="sheet-body">
+      <div style="display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap">
+        ${cover(b)}
+        <div style="flex:1;min-width:200px;display:flex;flex-direction:column;gap:8px">
+          <div class="chips" style="display:flex;gap:4px;flex-wrap:wrap"><span class="chip" style="--tint:${c.t}">${esc(b.type)}</span><span class="chip" style="--tint:var(--paper)">${(OWN.find(o=>o.k===b.own)||{n:'未設定'}).n}</span>${(b.tags||[]).map(t=>`<span class="chip">#${esc(t)}</span>`).join('')}</div>
+          <div class="radios" role="radiogroup" aria-label="狀態">${STATUS.map(s=>`<button type="button" role="radio" aria-checked="${b.status===s.k}" data-setstatus="${s.k}" ${usingSample?'disabled':''}>${s.n}</button>`).join('')}</div>
+          ${b.own==='wish'?`<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;font-size:13px">${b.buyNote?`<span class="hint" style="font-size:13px">${esc(b.buyNote)}</span>`:''}
+            ${usingSample?'':`<button class="btn sm green" type="button" data-bought2="paper">買咗實體</button><button class="btn sm mizu" type="button" data-bought2="ebook">買咗電子</button>`}</div>`:''}
+          <div class="bar"><i style="width:${p}%"></i></div>
+          <div class="prog num"><span>${progText(b)}</span><span>共讀咗 ${bs.length} 次・${mins} 分鐘</span></div>
+          ${usingSample?'':`<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px"><label for="quickProg">讀到</label>
+            <input class="inp num" id="quickProg" type="number" min="0" ${b.unit==='%'?'max="100"':''} value="${b.current||0}" style="width:96px"> ${b.unit==='%'?'%':b.unit}
+            <button class="btn sm green" type="button" data-saveprog>更新</button></div>`}
+        </div>
+      </div>
+      <div class="sec-title"><span class="dot"></span>摘句</div>
+      ${bq.length?bq.map(q=>`<div class="mini-quote">${esc(q.text)}${q.loc?`<small>${esc(q.loc)}</small>`:''}</div>`).join(''):'<span class="hint">未有摘句。</span>'}
+      <div class="sec-title"><span class="dot"></span>閱讀紀錄</div>
+      ${bs.length?`<div class="log">${bs.slice(0,8).map(logItem).join('')}</div>`:'<span class="hint">未讀過，撳下面「讀 10 分鐘」開始。</span>'}
+    </div>
+    <div class="sheet-foot">
+      <button class="btn coral sm" type="button" data-startbook>▶ 讀 10 分鐘</button>
+      ${usingSample?'':`<button class="btn plain sm" type="button" data-addq>＋ 抄一句</button>
+      <button class="btn plain sm" type="button" data-editbook>編輯</button>
+      <span class="right">${confirmDel?`<span class="confirm">連紀錄同摘句一齊刪？<button class="btn coral sm" type="button" data-delbook="yes">刪除</button><button class="btn plain sm" type="button" data-delbook="no">唔刪</button></span>`
+        :`<button class="btn plain sm" type="button" data-delbook="ask">刪除</button>`}</span>`}
+    </div>`, c);
+}
+$('#sheetRoot').addEventListener('click',e=>{
+  const b=books.find(x=>x.id===openBook); if(!b) return;
+  let el;
+  if(el=e.target.closest('[data-setstatus]')){
+    const st=el.dataset.setstatus; const up={...b,status:st,updated:Date.now()};
+    if(st==='done'){ up.finished=Date.now(); if(b.total) up.current=b.unit==='%'?100:b.total; if(b.unit==='%') up.current=100; }
+    store.save(up); if(st==='done') toast(`讀完《${b.title}》🎉`); return;
+  }
+  if(el=e.target.closest('[data-bought2]')){ store.save({...b,own:el.dataset.bought2,buyNote:'',updated:Date.now()}); toast(`《${b.title}》擺上書櫃喇`); return; }
+  if(e.target.closest('[data-saveprog]')){
+    let v=Math.max(0,+$('#quickProg').value||0); if(b.unit==='%') v=Math.min(100,v);
+    store.save({...b,current:v,updated:Date.now()}); toast('進度更新咗'); return;
+  }
+  if(e.target.closest('[data-startbook]')){ const id=b.id; closeSheet(); openFocus(id); return; }
+  if(e.target.closest('[data-addq]')){ openQuoteSheet(b.id); return; }
+  if(e.target.closest('[data-editbook]')){ openEditBook(b.id); return; }
+  if(el=e.target.closest('[data-delbook]')){
+    const a=el.dataset.delbook;
+    if(a==='ask'){ confirmDel=true; renderBookSheet(); }
+    else if(a==='no'){ confirmDel=false; renderBookSheet(); }
+    else { confirmDel=false; const id=b.id; closeSheet();
+      sess.filter(s=>s.book===id).forEach(s=>store.remove(s.id)); quotes.filter(q=>q.book===id).forEach(q=>store.remove(q.id));
+      store.remove(id); toast(`刪咗《${b.title}》`); }
+  }
+});
+
+/* --- add / edit book --- */
+let draft=null;
+function openEditBook(id,own){
+  if(usingSample && id){ return; }
+  const b=id?books.find(x=>x.id===id):null;
+  draft = b ? {own:'ebook',buyNote:'',...b,tags:[...(b.tags||[])]} : {id:uid('b'),kind:'book',title:'',author:'',type:'小說',tags:[],status:'want',own:own||'ebook',buyNote:'',unit:'頁',total:'',current:0,created:Date.now()};
+  openBook=null; renderEditBook(!b);
+}
+function renderEditBook(isNew){
+  const d=draft; const c=tc(d.type);
+  sheet(`<form id="bookForm">
+    <div class="sheet-top"><h3>${isNew?'加一本書':'編輯書本資料'}</h3><button class="btn plain sm" type="button" data-close>取消</button></div>
+    <div class="sheet-body">
+      <div class="field"><label for="b-title">書名</label><input class="inp" id="b-title" required maxlength="80" value="${esc(d.title)}" placeholder="例如：三國志"></div>
+      <div class="field"><label for="b-author">作者</label><input class="inp" id="b-author" maxlength="60" value="${esc(d.author)}" placeholder="可以留空"></div>
+      <div class="field"><span class="lab">類型</span><div class="radios" role="radiogroup" aria-label="類型">
+        ${TYPE_KEYS.map(t=>`<button type="button" role="radio" aria-checked="${d.type===t}" data-type="${esc(t)}" style="--c:${tc(t).c}">${esc(t)}</button>`).join('')}
+        <button type="button" class="edit-types" data-edittypes>✎ 編輯類型</button></div></div>
+      <div class="field"><label for="tagIn">標籤</label>
+        <div class="kw-box">${d.tags.map((t,i)=>`<span class="chip">#${esc(t)}<button type="button" data-rmtag="${i}" aria-label="移除 ${esc(t)}">×</button></span>`).join('')}
+          <input class="kw-in" id="tagIn" placeholder="例如：民國、郭嘉、資料搜集"></div>
+        <span class="hint">Enter 或逗號加入${allTags().length?'。已有：'+allTags().map(esc).join('、'):''}</span></div>
+      <div class="field"><span class="lab">擁有</span><div class="radios" role="radiogroup" aria-label="擁有">
+        ${OWN.map(o=>`<button type="button" role="radio" aria-checked="${d.own===o.k}" data-own="${o.k}">${o.n}</button>`).join('')}</div></div>
+      ${d.own==='wish'?`<div class="field"><label for="b-buy">買書備註</label><input class="inp" id="b-buy" maxlength="60" value="${esc(d.buyNote||'')}" placeholder="例如：博客來、二手、書展、HK$120"></div>`:''}
+      <div class="field"><span class="lab">狀態</span><div class="radios" role="radiogroup" aria-label="狀態">
+        ${STATUS.map(s=>`<button type="button" role="radio" aria-checked="${d.status===s.k}" data-st="${s.k}">${s.n}</button>`).join('')}</div></div>
+      <div class="grid2">
+        <div class="field"><label for="b-unit">用咩計進度</label><select id="b-unit">${UNITS.map(u=>`<option ${d.unit===u?'selected':''}>${u}</option>`).join('')}</select></div>
+        <div class="field"><label for="b-total">總共幾多${d.unit==='%'?'':'（'+d.unit+'）'}</label><input class="inp num" id="b-total" type="number" min="0" value="${esc(d.total)}" placeholder="唔知可以留空" ${d.unit==='%'?'disabled':''}></div>
+      </div>
+      <span class="hint">古籍建議用「篇」，論文同小說用「頁」，電子書冇固定頁數就用「%」。</span>
+    </div>
+    <div class="sheet-foot"><span class="right"><button class="btn coral" type="submit">${isNew?'加入書庫':'儲存'}</button></span></div>
+  </form>`, c);
+}
+function syncDraft(){
+  const t=$('#b-title'); if(!t) return;
+  draft.title=t.value; draft.author=$('#b-author').value; if($('#b-buy')) draft.buyNote=$('#b-buy').value; draft.unit=$('#b-unit').value; draft.total=$('#b-total').value;
+}
+function addTag(raw){
+  raw.split(/[,，、]/).map(s=>s.trim().replace(/^#/,'')).filter(Boolean).forEach(p=>{ if(!draft.tags.includes(p)) draft.tags.push(p); });
+}
+$('#sheetRoot').addEventListener('click',e=>{
+  if(!$('#bookForm')) return;
+  let el;
+  if(e.target.closest('[data-edittypes]')){ syncDraft(); openTypeSheet(draft); return; }
+  if(el=e.target.closest('[data-type]')){ syncDraft(); draft.type=el.dataset.type; renderEditBook(!books.find(b=>b.id===draft.id)); }
+  else if(el=e.target.closest('[data-own]')){ syncDraft(); draft.own=el.dataset.own; renderEditBook(!books.find(b=>b.id===draft.id)); }
+  else if(el=e.target.closest('[data-st]')){ syncDraft(); draft.status=el.dataset.st; renderEditBook(!books.find(b=>b.id===draft.id)); }
+  else if(el=e.target.closest('[data-rmtag]')){ syncDraft(); draft.tags.splice(+el.dataset.rmtag,1); renderEditBook(!books.find(b=>b.id===draft.id)); $('#tagIn').focus(); }
+});
+$('#sheetRoot').addEventListener('change',e=>{ if(e.target.id==='b-unit'){ syncDraft(); renderEditBook(!books.find(b=>b.id===draft.id)); } });
+$('#sheetRoot').addEventListener('keydown',e=>{
+  if(e.target.id!=='tagIn'||e.isComposing) return;
+  if(e.key==='Enter'||e.key===','||e.key==='，'){ e.preventDefault(); syncDraft(); addTag(e.target.value); renderEditBook(!books.find(b=>b.id===draft.id)); $('#tagIn').focus(); }
+  else if(e.key==='Backspace'&&!e.target.value&&draft.tags.length){ syncDraft(); draft.tags.pop(); renderEditBook(!books.find(b=>b.id===draft.id)); $('#tagIn').focus(); }
+});
+$('#sheetRoot').addEventListener('submit',e=>{
+  if(e.target.id==='bookForm'){
+    e.preventDefault(); syncDraft();
+    const ti=$('#tagIn'); if(ti&&ti.value.trim()) addTag(ti.value);
+    const d={...draft,title:draft.title.trim(),author:draft.author.trim(),buyNote:draft.own==='wish'?(draft.buyNote||'').trim():'',total:draft.unit==='%'?100:(draft.total===''?'':Math.max(0,+draft.total)),updated:Date.now()};
+    if(!d.title) return;
+    const isNew=!books.find(b=>b.id===d.id);
+    store.save(d); closeSheet(); toast(isNew?`《${d.title}》加入咗書庫`:'儲存咗');
+    if(isNew && tab!=='case'){ statusF='all'; tab='lib'; }
+  }
+});
+
+/* --- quote sheet: screenshots or paste --- */
+let qd=null, qCtl=null;
+function openQuoteSheet(bookId, mode){
+  if(usingSample){ toast('先加一本你自己嘅書'); openEditBook(null); return; }
+  if(!books.length){ toast('先加一本書'); openEditBook(null); return; }
+  const sel=bookId||((books.find(b=>b.status==='reading')||books[0]).id);
+  openBook=null;
+  qd={book:sel, mode: mode || (sampleImg ? 'shot' : 'paste'), items:[], paste:'', loc:'', busy:false, err:'', count:0};
+  renderQuoteSheet();
+}
+function syncQuote(){
+  if(!qd) return;
+  const bk=$('#q-book'); if(bk) qd.book=bk.value;
+  const pa=$('#q-paste'); if(pa) qd.paste=pa.value;
+  const lo=$('#q-loc'); if(lo) qd.loc=lo.value;
+  qd.items.forEach((it,i)=>{
+    const t=$('#qi-t-'+i), l=$('#qi-l-'+i), k=$('#qi-k-'+i);
+    if(t) it.text=t.value; if(l) it.loc=l.value; if(k) it.keep=k.checked;
+  });
+}
+function pasteParts(){ return qd.paste.split(/\n\s*\n/).map(s=>s.trim()).filter(Boolean); }
+function renderQuoteSheet(){
+  const b=books.find(x=>x.id===qd.book); const c=tc(b?b.type:'');
+  const keepN=qd.items.filter(i=>i.keep&&i.text.trim()).length;
+  const parts=qd.mode==='paste'?pasteParts().length:0;
+  let body='';
+  if(qd.mode==='shot'){
+    if(!sampleImg){
+      body=`<p class="hint" style="margin:0">呢個畫面用唔到截圖讀字功能，可以改用「貼上文字」。</p>`;
+    } else if(qd.busy){
+      body=`<div class="reading-shot"><svg width="70" height="60" viewBox="0 0 70 60" aria-hidden="true" class="spin-soft">
+          <rect x="6" y="10" width="40" height="44" rx="6" fill="#FFFCF6" stroke="#3E3A39" stroke-width="3"/>
+          <path d="M14 22 H38 M14 30 H34 M14 38 H36" stroke="#B4AAA2" stroke-width="3" stroke-linecap="round"/>
+          <circle cx="46" cy="30" r="12" fill="#E2F1F7" stroke="#3E3A39" stroke-width="3"/><path d="M55 39 L64 48" stroke="#3E3A39" stroke-width="4" stroke-linecap="round"/></svg>
+        <span id="shotProg">準備緊文字辨識…</span>
+        <button class="btn plain sm" type="button" data-qstop>停止</button></div>`;
+    } else {
+      body=`<label class="drop" for="q-files">
+          <svg width="54" height="46" viewBox="0 0 54 46" aria-hidden="true"><rect x="4" y="10" width="46" height="32" rx="7" fill="#FDF1CF" stroke="#3E3A39" stroke-width="3"/>
+          <rect x="18" y="4" width="18" height="9" rx="3" fill="#F2A497" stroke="#3E3A39" stroke-width="3"/><circle cx="27" cy="26" r="9" fill="#E2F1F7" stroke="#3E3A39" stroke-width="3"/></svg>
+          <b>揀截圖或者相片</b><span>一次最多 ${sampleImg.maxCount} 張。認到嘅字會分段列出，剔返想留低嘅句子。第一次用要下載中文字庫，需時一陣</span>
+          <input id="q-files" type="file" accept="${sampleImg.mediaTypes.join(',')}" multiple></label>`;
+    }
+  } else {
+    body=`<div class="field"><label for="q-paste">貼上句子</label>
+        <textarea id="q-paste" rows="5" placeholder="由閱讀 app 複製，貼喺度。一次貼幾句都得，每句之間空一行。">${esc(qd.paste)}</textarea>
+        <span class="hint" id="q-parts">${parts>1?`會分做 ${parts} 句儲存`:'每句之間空一行，就會分開儲存'}</span></div>
+      <div class="field"><label for="q-loc">位置</label><input class="inp" id="q-loc" maxlength="40" value="${esc(qd.loc)}" placeholder="例如：p.38、郭嘉傳、第三章、42%"></div>`;
+  }
+  const items = qd.mode==='shot' && qd.items.length ? `<div class="sec-title"><span class="dot"></span>認到 ${qd.items.length} 段，剔返要留低嘅，可以直接改錯字</div>
+    ${qd.items.map((it,i)=>`<div class="qitem ${it.keep?'':'off'}">
+      <label class="keep"><input type="checkbox" id="qi-k-${i}" ${it.keep?'checked':''} data-qkeep="${i}"> 留低</label>
+      <textarea id="qi-t-${i}" rows="3" aria-label="第 ${i+1} 句">${esc(it.text)}</textarea>
+      <input class="inp" id="qi-l-${i}" maxlength="40" value="${esc(it.loc)}" placeholder="位置（可留空）" aria-label="第 ${i+1} 句位置"></div>`).join('')}` : '';
+  sheet(`<form id="quoteForm"><div class="sheet-top"><h3>抄一句</h3><button class="btn plain sm" type="button" data-qclose>取消</button></div>
+    <div class="sheet-body">
+      <div class="field"><label for="q-book">出自</label><select id="q-book">${books.map(x=>`<option value="${esc(x.id)}" ${x.id===qd.book?'selected':''}>《${esc(x.title)}》</option>`).join('')}</select></div>
+      <div class="seg" role="tablist" aria-label="點樣加" style="align-self:flex-start">
+        <button type="button" role="tab" aria-pressed="${qd.mode==='shot'}" data-qmode="shot">截圖／影相</button>
+        <button type="button" role="tab" aria-pressed="${qd.mode==='paste'}" data-qmode="paste">貼上文字</button>
+      </div>
+      ${body}
+      ${items}
+      ${qd.err?`<span class="err" role="alert">${esc(qd.err)}</span>`:''}
+    </div>
+    <div class="sheet-foot"><span class="hint">${qd.mode==='shot'?'讀書時截圖就好，唔使停低打字':''}</span>
+      <span class="right"><button class="btn coral" type="submit" ${qd.busy?'disabled':''}>${qd.mode==='shot'?(keepN?`儲存 ${keepN} 句`:'儲存'):(parts>1?`儲存 ${parts} 句`:'儲存')}</button></span></div></form>`, c);
+}
+function shotError(code){
+  return ({
+    not_granted:'未允許呢頁用 Claude 讀相，可以改用「貼上文字」。',
+    sampling_disabled:'你個帳戶而家用唔到呢個功能，可以改用「貼上文字」。',
+    images_unavailable:'呢個畫面傳唔到相俾 Claude，可以改用「貼上文字」。',
+    image_rejected:'有張相讀唔到，可能太大或者格式唔啱，試下換一張。',
+    rate_limited:'用得太密，等一陣再試。',
+    session_expired:'登入過期，請重新登入 Claude 再試。',
+    refused:'呢幾張相處理唔到，試下換另一張。',
+    invalid_json:'讀到嘅結果整理唔到，撳多一次試下。',
+    empty_completion:'相入面搵唔到字，試下影清楚啲。',
+  })[code] || '讀相時出咗問題，等一陣再試。';
+}
+let tessP=null, tessWorker=null, tessIdx=0, tessN=0;
+function loadTess(){
+  if(window.Tesseract) return Promise.resolve();
+  if(!tessP) tessP=new Promise((res,rej)=>{ const sc=document.createElement('script');
+    sc.src='https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';
+    sc.onload=res; sc.onerror=()=>{ tessP=null; rej(new Error('load')); }; document.head.appendChild(sc); });
+  return tessP;
+}
+function shotProg(t){ const el=$('#shotProg'); if(el) el.textContent=t; }
+const CJK='[\\u3000-\\u303f\\u3400-\\u9fff\\uf900-\\ufaff\\uff00-\\uffef]';
+function toParas(text){
+  let t=String(text||'').replace(new RegExp('('+CJK+')[ \\t]+(?='+CJK+')','g'),'$1');
+  const out=[]; let loc='';
+  t.split(/\n\s*\n/).forEach(block=>{
+    const lines=block.split('\n').map(l=>l.trim()).filter(Boolean);
+    const keep=[];
+    lines.forEach(l=>{ const m=l.match(/^[-–—\s]*(\d{1,4})[-–—\s]*$/); if(m){ loc='p.'+m[1]; } else keep.push(l); });
+    let para=''; keep.forEach(l=>{ para += (para && /[A-Za-z0-9,.;:!?]$/.test(para) && /^[A-Za-z0-9]/.test(l)) ? ' '+l : l; });
+    if(para.replace(/\s/g,'').length>=4) out.push(para);
+  });
+  return out.map(p=>({text:p,loc,keep:false}));
+}
+async function readShots(files){
+  const list=[...files].slice(0, sampleImg.maxCount);
+  if(!list.length) return;
+  qd.busy=true; qd.err=''; qd.count=list.length; renderQuoteSheet();
+  const ctl={aborted:false, abort(){ this.aborted=true; }}; qCtl=ctl;
+  const found=[];
+  try{
+    shotProg('載入緊文字辨識工具…');
+    await loadTess();
+    if(!tessWorker){
+      shotProg('下載緊中文字庫（第一次會耐少少）…');
+      tessWorker=await Tesseract.createWorker('chi_tra+eng',1,{ logger:m=>{
+        if(m.status==='recognizing text') shotProg(`辨識緊第 ${tessIdx+1}/${tessN} 張… ${Math.round(m.progress*100)}%`);
+      }});
+    }
+    tessN=list.length;
+    for(tessIdx=0; tessIdx<list.length; tessIdx++){
+      if(ctl.aborted) break;
+      const { data } = await tessWorker.recognize(list[tessIdx]);
+      found.push(...toParas(data.text));
+    }
+  }catch(e){
+    if(qd) qd.err = tessWorker ? '有張相辨識唔到，試下換一張。' : '文字辨識工具載入唔到，請檢查網絡再試。';
+  }
+  if(!qd) return;
+  if(found.length<=3) found.forEach(f=>f.keep=true);
+  qd.items=qd.items.concat(found);
+  if(!found.length && !qd.err && !ctl.aborted) qd.err='相入面搵唔到字，試下影清楚啲、或者裁走多餘位置。';
+  qd.busy=false; qCtl=null; renderQuoteSheet();
+}
+$('#sheetRoot').addEventListener('click',e=>{
+  if(!$('#quoteForm')||!qd) return;
+  let el;
+  if(e.target.closest('[data-qclose]')){ if(qCtl) qCtl.abort(); qd=null; closeSheet(); return; }
+  if(e.target.closest('[data-qstop]')){ if(qCtl) qCtl.abort(); return; }
+  if(el=e.target.closest('[data-qmode]')){ syncQuote(); qd.mode=el.dataset.qmode; qd.err=''; renderQuoteSheet(); return; }
+});
+$('#sheetRoot').addEventListener('change',e=>{
+  if(!$('#quoteForm')||!qd) return;
+  if(e.target.id==='q-files'){ syncQuote(); readShots(e.target.files); return; }
+  if(e.target.id==='q-book'){ qd.book=e.target.value; return; }
+  if(e.target.dataset.qkeep!=null){ syncQuote(); renderQuoteSheet(); }
+});
+$('#sheetRoot').addEventListener('input',e=>{
+  if(e.target.id!=='q-paste'||!qd) return;
+  qd.paste=e.target.value; const n=pasteParts().length;
+  const h=$('#q-parts'); if(h) h.textContent=n>1?`會分做 ${n} 句儲存`:'每句之間空一行，就會分開儲存';
+  const btn=document.querySelector('#quoteForm [type="submit"]'); if(btn) btn.textContent=n>1?`儲存 ${n} 句`:'儲存';
+});
+$('#sheetRoot').addEventListener('submit',e=>{
+  if(e.target.id!=='quoteForm'||!qd) return;
+  e.preventDefault(); syncQuote();
+  const now=Date.now(); let rows=[];
+  if(qd.mode==='paste') rows=pasteParts().map(t=>({text:t,loc:qd.loc.trim()}));
+  else rows=qd.items.filter(i=>i.keep&&i.text.trim()).map(i=>({text:i.text.trim(),loc:i.loc.trim()}));
+  if(!rows.length){ qd.err=qd.mode==='paste'?'未有貼上任何句子':'未有揀要留低嘅句子'; renderQuoteSheet(); return; }
+  rows.forEach((r,i)=>store.save({id:uid('q'),kind:'quote',book:qd.book,text:r.text,loc:r.loc,created:now+i}));
+  qd=null; closeSheet(); toast(rows.length>1?`抄低咗 ${rows.length} 句`:'抄低咗');
+});
+
+/* --- type editor --- */
+function saveSettings(){ return store.save({id:'settings',kind:'settings',...settings,types:typeList}); }
+let tDraft=null, tReturn=null, tErr='';
+function openTypeSheet(returnDraft){
+  tReturn=returnDraft; tErr=''; openBook=null;
+  tDraft=typeList.map(t=>({rid:uid('t'),n:t.n,p:t.p|0,orig:t.n,del:false,moveTo:''}));
+  renderTypeSheet();
+}
+function typeCount(name){ return name ? books.filter(b=>b.type===name).length : 0; }
+function syncTypeInputs(){ document.querySelectorAll('[data-tname]').forEach(i=>{ const r=tDraft.find(x=>x.rid===i.dataset.tname); if(r) r.n=i.value; }); }
+function renderTypeSheet(){
+  const live=tDraft.filter(r=>!r.del);
+  sheet(`<form id="typeForm"><div class="sheet-top"><h3>編輯類型</h3><button class="btn plain sm" type="button" data-tclose>取消</button></div>
+    <div class="sheet-body">
+      <span class="hint" style="font-size:13px">改名之後，屬於呢個類型嘅書會自動跟住改。顏色會用喺書脊、封面同卡片。</span>
+      ${tDraft.map(r=>{
+        const n=typeCount(r.orig);
+        if(r.del) return `<div class="trow del"><span class="gone">${esc(r.n||r.orig)}</span>
+          ${n?`<label class="n" for="mv-${r.rid}">${n} 本書改做</label><select id="mv-${r.rid}" data-move="${r.rid}">${live.map(o=>`<option value="${o.rid}" ${r.moveTo===o.rid?'selected':''}>${esc(o.n||'（未命名）')}</option>`).join('')}</select>`:''}
+          <button class="btn plain sm" type="button" data-tundo="${r.rid}">還原</button></div>`;
+        return `<div class="trow">
+          <div class="swatches" role="radiogroup" aria-label="${esc(r.n)} 顏色">${PALETTE.map((c,i)=>`<button type="button" class="sw" role="radio" aria-checked="${r.p===i}" aria-label="${c.n}" data-tcol="${r.rid}" data-i="${i}" style="--c:${c.c}"></button>`).join('')}</div>
+          <input class="inp" id="tn-${r.rid}" maxlength="12" data-tname="${r.rid}" value="${esc(r.n)}" aria-label="類型名稱" placeholder="類型名稱">
+          <span class="n">${r.orig?n+' 本':'新'}</span>
+          <button class="btn plain sm" type="button" data-tdel="${r.rid}" ${live.length<=1?'disabled':''}>刪除</button></div>`;
+      }).join('')}
+      <div><button class="btn sm" type="button" data-tadd>＋ 新增類型</button></div>
+      ${tErr?`<span class="err" role="alert">${esc(tErr)}</span>`:''}
+    </div>
+    <div class="sheet-foot"><span class="right"><button class="btn coral" type="submit">儲存</button></span></div></form>`, PALETTE[1]);
+}
+function backFromTypes(){
+  const d=tReturn; tDraft=null; tReturn=null;
+  if(d){ draft=d; if(!TYPE_KEYS.includes(draft.type)) draft.type=TYPE_KEYS[0]; renderEditBook(!books.find(b=>b.id===draft.id)); }
+  else closeSheet();
+}
+$('#sheetRoot').addEventListener('click',e=>{
+  if(!$('#typeForm')) return;
+  let el;
+  if(e.target.closest('[data-tclose]')){ backFromTypes(); return; }
+  syncTypeInputs();
+  if(el=e.target.closest('[data-tcol]')){ tDraft.find(r=>r.rid===el.dataset.tcol).p=+el.dataset.i; renderTypeSheet(); return; }
+  if(el=e.target.closest('[data-tdel]')){
+    const r=tDraft.find(x=>x.rid===el.dataset.tdel);
+    if(!r.orig){ tDraft=tDraft.filter(x=>x!==r); }
+    else { r.del=true; const other=tDraft.find(x=>!x.del); r.moveTo=other?other.rid:''; }
+    renderTypeSheet(); return;
+  }
+  if(el=e.target.closest('[data-tundo]')){ tDraft.find(r=>r.rid===el.dataset.tundo).del=false; renderTypeSheet(); return; }
+  if(e.target.closest('[data-tadd]')){
+    const used=tDraft.filter(r=>!r.del).map(r=>r.p);
+    const p=[0,1,2,3].find(i=>!used.includes(i)) ?? tDraft.length%4;
+    tDraft.push({rid:uid('t'),n:'',p,orig:'',del:false,moveTo:''}); renderTypeSheet();
+    const ins=document.querySelectorAll('[data-tname]'); ins[ins.length-1].focus(); return;
+  }
+});
+$('#sheetRoot').addEventListener('change',e=>{
+  if(!$('#typeForm')) return; const m=e.target.dataset.move; if(!m) return;
+  syncTypeInputs(); tDraft.find(r=>r.rid===m).moveTo=e.target.value;
+});
+$('#sheetRoot').addEventListener('submit',e=>{
+  if(e.target.id!=='typeForm') return; e.preventDefault(); syncTypeInputs();
+  const live=tDraft.filter(r=>!r.del); live.forEach(r=>r.n=r.n.trim());
+  if(live.some(r=>!r.n)){ tErr='每個類型都要有名'; renderTypeSheet(); return; }
+  if(new Set(live.map(r=>r.n)).size!==live.length){ tErr='類型名唔可以重複'; renderTypeSheet(); return; }
+  const dest={};
+  tDraft.forEach(r=>{ if(!r.orig) return;
+    if(r.del){ const to=live.find(x=>x.rid===r.moveTo)||live[0]; dest[r.orig]=to.n; }
+    else if(r.n!==r.orig) dest[r.orig]=r.n; });
+  const newList=live.map(r=>({n:r.n,p:r.p}));
+  buildTypes(newList); settings={...settings,types:newList};
+  if(!usingSample){
+    books.filter(b=>dest[b.type]).forEach(b=>store.save({...b,type:dest[b.type],updated:Date.now()}));
+  } else { books.forEach(b=>{ if(dest[b.type]) b.type=dest[b.type]; }); }
+  if(tagF && dest[tagF]) tagF=dest[tagF]; else if(tagF && !TYPE_KEYS.includes(tagF) && !allTags().includes(tagF)) tagF=null;
+  if(tReturn && dest[tReturn.type]) tReturn.type=dest[tReturn.type];
+  saveSettings(); renderAll(); toast('類型更新咗');
+  backFromTypes();
+});
+
+/* ================= focus mode ================= */
+const TKEY='reading-days-timer';
+let timer=null, tickT=null, wake=null, audio=null;
+function saveTimer(){ try{ timer?localStorage.setItem(TKEY,JSON.stringify(timer)):localStorage.removeItem(TKEY); }catch(e){} }
+function openFocus(bookId){
+  const pool=books.filter(b=>b.status!=='done');
+  const first = bookId || (pool.find(b=>b.status==='reading')||pool[0]||{}).id;
+  timer={phase:'pick',book:first||null,dur:10,distract:0};
+  renderFocus();
+}
+function closeFocus(){ timer=null; saveTimer(); clearInterval(tickT); releaseWake(); $('#focusRoot').innerHTML=''; }
+function leftMs(){ if(!timer) return 0; return timer.paused ? timer.left : Math.max(0,timer.endAt-Date.now()); }
+let teaN=0;
+function teaSVG(frac,steam){
+  // frac 1 = full cup, 0 = empty
+  const top=40, bot=72; const lvl=bot-(bot-top)*frac; const cid='cup'+(++teaN);
+  return `<defs><clipPath id="${cid}"><path d="M20 38 H76 L70 74 Q68 80 60 80 H36 Q28 80 26 74 Z"/></clipPath></defs>
+    <ellipse cx="48" cy="81" rx="40" ry="3.5" fill="#FBF3E4"/>
+    ${steam?`<g fill="none" stroke="#B4AAA2" stroke-width="2.5" stroke-linecap="round"><path d="M38 30 Q34 24 38 18 Q42 12 38 6"><animate attributeName="opacity" values=".2;1;.2" dur="3s" repeatCount="indefinite"/></path><path d="M54 30 Q50 24 54 18 Q58 12 54 6"><animate attributeName="opacity" values="1;.2;1" dur="3s" repeatCount="indefinite"/></path></g>`:''}
+    <path d="M74 46 Q88 46 86 58 Q84 68 70 66" fill="none" stroke="#3E3A39" stroke-width="3"/>
+    <path d="M20 38 H76 L70 74 Q68 80 60 80 H36 Q28 80 26 74 Z" fill="#FFFCF6"/>
+    <rect x="16" y="${lvl}" width="64" height="${82-lvl}" fill="#B9DAA5" clip-path="url(#${cid})"/>
+    <path d="M20 38 H76 L70 74 Q68 80 60 80 H36 Q28 80 26 74 Z" fill="none" stroke="#3E3A39" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M30 52 Q48 46 66 52" fill="none" stroke="#F2A497" stroke-width="3" stroke-linecap="round"/>`;
+}
+function renderFocus(){
+  const r=$('#focusRoot'); if(!timer){ r.innerHTML=''; return; }
+  const b=books.find(x=>x.id===timer.book);
+  if(timer.phase==='pick'){
+    const pool=books.filter(x=>x.status!=='done').sort((a,z)=>(a.status==='reading'?0:1)-(z.status==='reading'?0:1));
+    r.innerHTML=`<div class="focus" role="dialog" aria-modal="true" aria-label="開始閱讀">
+      <button class="btn plain sm x" type="button" data-f="close">取消</button>
+      <div class="pick">
+        <svg class="tea" viewBox="0 0 96 86" aria-hidden="true">${teaSVG(1,true)}</svg>
+        <h2 style="margin:0;font-weight:400">今次讀邊本？</h2>
+        ${pool.length?`<div class="pick-books" role="radiogroup" aria-label="揀書">${pool.map(x=>{const c=tc(x.type);return `<button type="button" role="radio" aria-checked="${x.id===timer.book}" data-fbook="${esc(x.id)}" style="--c:${c.c};--tint:${c.t}"><span class="sp"></span><span class="tt">${esc(x.title)}</span><span class="hint">${esc(x.type)}</span></button>`;}).join('')}</div>`
+          :`<p class="hint">書庫未有書，先加一本。</p><button class="btn" type="button" data-f="addbook">＋ 加書</button>`}
+        <div class="mins" role="radiogroup" aria-label="時間">${MINS.map(m=>`<button type="button" role="radio" aria-checked="${timer.dur===m}" data-fmin="${m}">${m} 分鐘</button>`).join('')}</div>
+        <p class="msg">開始之前：開手機專注模式，或者將手機反轉放遠啲。</p>
+        <button class="btn coral" type="button" data-f="go" ${pool.length&&timer.book?'':'disabled'} style="font-size:18px;padding:10px 26px">開始</button>
+      </div></div>`;
+    return;
+  }
+  if(timer.phase==='run'){
+    const total=timer.dur*60e3, left=leftMs(); const frac=left/total;
+    const mm=Math.floor(left/60000), ss=Math.floor(left%60000/1000);
+    r.innerHTML=`<div class="focus" role="dialog" aria-modal="true" aria-label="閱讀中">
+      <div class="bk">${b?'《'+esc(b.title)+'》':''}</div>
+      <svg class="tea" viewBox="0 0 96 86" aria-hidden="true" id="teaSvg">${teaSVG(frac,!timer.paused)}</svg>
+      <div class="clock num" id="clock" aria-live="off">${String(mm).padStart(2,'0')}:${String(ss).padStart(2,'0')}</div>
+      <p class="msg">${timer.paused?'暫停咗。準備好就繼續。':'放低手機，翻開書本。杯茶飲完就夠鐘。'}</p>
+      <div class="ctrl">
+        <button class="btn mizu" type="button" data-f="distract">分心咗一次</button>
+        <button class="btn plain" type="button" data-f="pause">${timer.paused?'繼續':'暫停'}</button>
+        <button class="btn green" type="button" data-f="finish">提早完成</button>
+      </div>
+      <p class="tip">見到好句？喺閱讀器截圖或者影低就得，讀完先上傳。</p>
+      <span class="distract">分心 <span class="num" id="dcount">${timer.distract}</span> 次・<button type="button" data-f="quit" style="border:0;background:transparent;text-decoration:underline;color:var(--ink-soft);font-size:13px;padding:0">唔讀喇，唔記錄</button></span>
+    </div>`;
+    return;
+  }
+  if(timer.phase==='done'){
+    const mins=Math.max(1,Math.round(timer.spent/60000));
+    r.innerHTML=`<div class="focus" role="dialog" aria-modal="true" aria-label="讀完">
+      <svg width="110" height="110" viewBox="0 0 40 40" class="stamp-pop" aria-hidden="true">
+        <circle cx="20" cy="20" r="17" fill="#FCE3DD" stroke="#F2A497" stroke-width="2.6"/>
+        <circle cx="20" cy="20" r="12.5" fill="none" stroke="#F2A497" stroke-width="1.3" stroke-dasharray="2 2.5"/>
+        <text x="20" y="25" text-anchor="middle" font-size="14" font-family="Huninn, sans-serif" fill="#C9675A">讀</text></svg>
+      <h2 style="margin:0;font-weight:400">讀咗 ${mins} 分鐘，蓋印！</h2>
+      <form class="done-card" id="doneForm">
+        <div class="field"><label for="d-to">讀到${b?(b.unit==='%'?'（%）':'第幾'+b.unit):''}</label>
+          <input class="inp num" id="d-to" type="number" min="0" value="${b?b.current||0:0}" ${b&&b.unit==='%'?'max="100"':''}></div>
+        <div class="field"><label for="d-note">今日記得咩？（一句就夠，唔寫都得）</label>
+          <textarea id="d-note" rows="2" placeholder="例如：原來郭嘉同荀彧……"></textarea></div>
+        <span class="hint">分心 ${timer.distract} 次</span>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn coral" type="submit">儲存紀錄</button>
+          <button class="btn mizu" type="button" data-f="saveshots">儲存，再上傳截圖</button>
+          <button class="btn plain" type="button" data-f="again">再讀 10 分鐘</button>
+        </div>
+      </form></div>`;
+  }
+}
+function tick(){
+  if(!timer||timer.phase!=='run') return;
+  const left=leftMs(); const total=timer.dur*60e3;
+  const c=$('#clock'); if(c) c.textContent=String(Math.floor(left/60000)).padStart(2,'0')+':'+String(Math.floor(left%60000/1000)).padStart(2,'0');
+  const t=$('#teaSvg'); if(t && !timer.paused) t.innerHTML=teaSVG(left/total,true);
+  if(left<=0) finish(total);
+}
+function finish(spent){
+  clearInterval(tickT); releaseWake(); chime();
+  timer={...timer,phase:'done',spent}; saveTimer(); renderFocus();
+}
+async function holdWake(){ try{ if(navigator.wakeLock) wake=await navigator.wakeLock.request('screen'); }catch(e){} }
+function releaseWake(){ try{ wake&&wake.release(); }catch(e){} wake=null; }
+function chime(){
+  try{ if(!audio) return; const t=audio.currentTime;
+    [523.25,659.25,783.99].forEach((f,i)=>{ const o=audio.createOscillator(), g=audio.createGain(); o.type='sine'; o.frequency.value=f;
+      g.gain.setValueAtTime(0,t+i*.18); g.gain.linearRampToValueAtTime(.18,t+i*.18+.02); g.gain.exponentialRampToValueAtTime(.001,t+i*.18+.9);
+      o.connect(g).connect(audio.destination); o.start(t+i*.18); o.stop(t+i*.18+1); }); }catch(e){}
+}
+$('#focusRoot').addEventListener('click',e=>{
+  if(!timer) return; let el;
+  if(el=e.target.closest('[data-fbook]')){ timer.book=el.dataset.fbook; renderFocus(); return; }
+  if(el=e.target.closest('[data-fmin]')){ timer.dur=+el.dataset.fmin; renderFocus(); return; }
+  const f=(el=e.target.closest('[data-f]'))&&el.dataset.f; if(!f) return;
+  if(f==='close'||f==='quit'){ closeFocus(); return; }
+  if(f==='addbook'){ closeFocus(); openEditBook(null); return; }
+  if(f==='go'||f==='again'){
+    if(f==='again'){ timer.dur=10; timer.distract=0; }
+    try{ audio=audio||new (window.AudioContext||window.webkitAudioContext)(); audio.resume&&audio.resume(); }catch(err){}
+    timer={...timer,phase:'run',startAt:Date.now(),endAt:Date.now()+timer.dur*60e3,paused:false};
+    saveTimer(); holdWake(); renderFocus(); clearInterval(tickT); tickT=setInterval(tick,1000); return;
+  }
+  if(f==='distract'){ timer.distract++; saveTimer(); const d=$('#dcount'); if(d) d.textContent=timer.distract; return; }
+  if(f==='pause'){
+    if(timer.paused){ timer.endAt=Date.now()+timer.left; timer.paused=false; holdWake(); }
+    else { timer.left=leftMs(); timer.paused=true; releaseWake(); }
+    saveTimer(); renderFocus(); return;
+  }
+  if(f==='finish'){ finish(timer.dur*60e3-leftMs()); return; }
+  if(f==='saveshots'){ timer.afterShots=true; $('#doneForm').requestSubmit(); return; }
+});
+$('#focusRoot').addEventListener('submit',e=>{
+  if(e.target.id!=='doneForm') return; e.preventDefault();
+  const b=books.find(x=>x.id===timer.book);
+  const mins=Math.max(1,Math.round(timer.spent/60000));
+  let to=$('#d-to').value===''?null:Math.max(0,+$('#d-to').value); if(b&&b.unit==='%'&&to!=null) to=Math.min(100,to);
+  if(usingSample){ toast('示例模式唔會儲存，加你自己嘅書先'); closeFocus(); return; }
+  store.save({id:uid('s'),kind:'sess',book:timer.book,start:timer.startAt,minutes:mins,distract:timer.distract,note:$('#d-note').value.trim(),to});
+  if(b){ const up={...b,updated:Date.now()}; if(to!=null) up.current=to; if(b.status==='want'||b.status==='paused') up.status='reading';
+    if(b.total && to!=null && to>=b.total){ up.status='done'; up.finished=Date.now(); toast(`讀完《${b.title}》🎉`); } else toast('蓋咗印！');
+    store.save(up); }
+  const shotBook=timer.afterShots?timer.book:null;
+  closeFocus();
+  if(shotBook) openQuoteSheet(shotBook,'shot');
+});
+document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible'&&timer&&timer.phase==='run'&&!timer.paused){ holdWake(); tick(); } });
+
+/* ================= boot ================= */
+const local=localStore();
+store=local; store.start(); setSync('連線中…',true);
+try{ const t=JSON.parse(localStorage.getItem(TKEY)||'null');
+  if(t&&t.phase){ timer=t; renderFocus(); if(t.phase==='run'){ clearInterval(tickT); tickT=setInterval(tick,1000); tick(); } } }catch(e){}
+const cfg=window.FIREBASE_CONFIG;
+if(!window.firebase || !cfg || !cfg.apiKey || /PASTE|貼/.test(cfg.apiKey)){
+  setSync('只存喺呢部機',true);
+  $('#sync').onclick=()=>toast('未設定 Firebase，紀錄只會存喺呢部機');
+} else {
+  firebase.initializeApp(cfg);
+  const auth=firebase.auth(), fs=firebase.firestore();
+  try{ fs.enablePersistence({synchronizeTabs:true}).catch(()=>{}); }catch(e){}
+  let user=null, armed=false, armT=null;
+  auth.getRedirectResult().catch(()=>{});
+  auth.onAuthStateChanged(u=>{
+    user=u;
+    if(store&&store.stop) store.stop();
+    if(u){ store=cloudStore(fs,u.uid,local); setSync('☁ 同步中…',false); store.start(); }
+    else { store=local; store.start(); setSync('登入同步',true); }
+  });
+  $('#sync').onclick=()=>{
+    if(!user){
+      const p=new firebase.auth.GoogleAuthProvider();
+      auth.signInWithPopup(p).catch(e=>{
+        if(e&&/popup|operation-not-supported/.test(e.code||'')) auth.signInWithRedirect(p);
+        else if(e&&e.code==='auth/unauthorized-domain') toast('呢個網域未加入 Firebase 授權網域');
+        else if(e&&e.code!=='auth/cancelled-popup-request') toast('登入唔到，請再試');
+      });
+      return;
+    }
+    if(!armed){ armed=true; setSync('再撳一次登出',false); clearTimeout(armT); armT=setTimeout(()=>{ armed=false; setSync('☁ 已同步',false); },3000); return; }
+    armed=false; clearTimeout(armT); auth.signOut().then(()=>toast('已登出，紀錄仍然喺雲端'));
+  };
+}
+})();
+</script>
+</body>
+</html>
